@@ -7,8 +7,6 @@ Authors: Jean-Baptiste Tristan
 /-!
 # Identifiers
 
-This file describes the type algegra of StableHLO.
-
 -/
 
 def FuncID := Nat

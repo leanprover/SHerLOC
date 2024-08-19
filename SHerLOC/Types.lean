@@ -7,8 +7,6 @@ Authors: Jean-Baptiste Tristan
 /-!
 # Types
 
-This file describes the type algegra of StableHLO.
-
 -/
 
 inductive Signedness where
@@ -23,7 +21,10 @@ inductive IntegerSize where
   | b32
   | b64
 
-inductive FloatSize where
+inductive IntegerType where
+  | IntegerType (sign : Signedness) (size : IntegerSize)
+
+inductive FloatType where
   | f8E4M3FN
   | f8E5M2
   | f8E4M3FNUZ
@@ -34,15 +35,15 @@ inductive FloatSize where
   | f32
   | f64
 
-inductive ComplexSize where
+inductive ComplexType where
   | f32
   | f64
 
 inductive TensorElementType where
-  | BooleanType : TensorElementType
-  | IntegerType : Signedness → IntegerSize → TensorElementType
-  | FloatType : FloatSize → TensorElementType
-  | ComplexType : ComplexSize → TensorElementType
+  | BooleanType
+  | IntegerType (t : IntegerType)
+  | FloatType (t: FloatType)
+  | ComplexType (t: ComplexType)
 
 inductive QuantizedTensorElementType where
   | Quant : Signedness → IntegerSize → Int → Int → FloatSize → Int → List (Float × Int) → QuantizedTensorElementType
