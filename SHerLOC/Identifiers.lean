@@ -11,3 +11,4 @@ Authors: Jean-Baptiste Tristan
 
 def FuncId := Nat
 def ValueId := Nat
+def UnusedId := Nat

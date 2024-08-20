@@ -49,14 +49,15 @@ inductive QuantizedTensorElementType where
   | quant : Signedness → IntegerSize → Int → Int → FloatSize → Int → List (Float × Int) → QuantizedTensorElementType
 
 inductive ValueType where
-  | tensorType : List Int → TensorElementType → ValueType
-  | quantizedTensorType : List Int → QuantizedTensorElementType → ValueType
+  | tensorType (shape : List Int) (typ : TensorElementType)
+  | quantizedTensorType (shape : List Int) (typ : QuantizedTensorElementType)
   | tokenType
-  | tupleType : List Valuetype → ValueType
+  | tupleType (elements : List Valuetype)
 
 inductive TensorFloar32 where
 
 inductive StringType where
 
-inductive FunctionType where
-  | functionType : List ValueType → List ValueType → FunctionType
+structure FunctionType where
+  domain : List ValueType
+  range : List ValueType
