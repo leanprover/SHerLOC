@@ -9,6 +9,8 @@ Authors: Jean-Baptiste Tristan
 
 -/
 
+namespace StableHLO
+
 inductive Signedness where
   | signed
   | unsigned
@@ -21,8 +23,9 @@ inductive IntegerSize where
   | b32
   | b64
 
-inductive IntegerType where
-  | integerType (sign : Signedness) (size : IntegerSize)
+structure IntegerType where
+  sign : Signedness
+  size : IntegerSize
 
 inductive FloatType where
   | f8E4M3FN
@@ -34,6 +37,7 @@ inductive FloatType where
   | f16
   | f32
   | f64
+  | tf32
 
 inductive ComplexType where
   | f32
@@ -54,10 +58,20 @@ inductive ValueType where
   | tokenType
   | tupleType (elements : List Valuetype)
 
-inductive TensorFloar32 where
-
 inductive StringType where
 
 structure FunctionType where
   domain : List ValueType
   range : List ValueType
+
+inductive NonValueType where
+  | tensorElementType (t : TensorElementType)
+  | quantizedTensorElementType (t: QuantizedTensorElementType)
+  | functionType (t : FunctionType)
+  | stringType (t : StringType)
+
+inductive SType where
+  | valueType (t : ValueType)
+  | nonValueType (t : NonValueType)
+
+end StableHLO
