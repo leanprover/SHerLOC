@@ -11,11 +11,11 @@ import SHerLOC.Types
 -/
 
 inductive Constant where
-  | BooleanConstant (literal : Bool)
-  | IntegerConstant (literal : Int) (type : IntegerType)
-  | FloatConstant (literal : Float) (type : FloatType)
-  | ComplexConstant (real imaginary : ComplexType)
-  | TensorConstant
-  | QuantizedTensorConstant
-  | StringConstant (literal : String)
-  | EnumConstant
+  | booleanConstant (literal : Bool)
+  | integerConstant (literal : Int) (type : IntegerType)
+  | floatConstant (literal : Float) (type : FloatType)
+  | complexConstant (real imaginary : ComplexType)
+  | tensorConstant
+  | quantizedTensorConstant
+  | stringConstant (literal : String)
+  | enumConstant

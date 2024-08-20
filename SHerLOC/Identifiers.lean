@@ -9,5 +9,5 @@ Authors: Jean-Baptiste Tristan
 
 -/
 
-def FuncID := Nat
-def ValueID := Nat
+def FuncId := Nat
+def ValueId := Nat

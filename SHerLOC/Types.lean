@@ -10,8 +10,8 @@ Authors: Jean-Baptiste Tristan
 -/
 
 inductive Signedness where
-  | Signed
-  | Unsigned
+  | signed
+  | unsigned
 
 inductive IntegerSize where
   | b2
@@ -22,7 +22,7 @@ inductive IntegerSize where
   | b64
 
 inductive IntegerType where
-  | IntegerType (sign : Signedness) (size : IntegerSize)
+  | integerType (sign : Signedness) (size : IntegerSize)
 
 inductive FloatType where
   | f8E4M3FN
@@ -40,23 +40,23 @@ inductive ComplexType where
   | f64
 
 inductive TensorElementType where
-  | BooleanType
-  | IntegerType (t : IntegerType)
-  | FloatType (t: FloatType)
-  | ComplexType (t: ComplexType)
+  | booleanType
+  | integerType (t : IntegerType)
+  | floatType (t: FloatType)
+  | complexType (t: ComplexType)
 
 inductive QuantizedTensorElementType where
-  | Quant : Signedness → IntegerSize → Int → Int → FloatSize → Int → List (Float × Int) → QuantizedTensorElementType
+  | quant : Signedness → IntegerSize → Int → Int → FloatSize → Int → List (Float × Int) → QuantizedTensorElementType
 
 inductive ValueType where
-  | TensorType : List Int → TensorElementType → ValueType
-  | QuantizedTensorType : List Int → QuantizedTensorElementType → ValueType
-  | TokenType
-  | TupleType : List Valuetype → ValueType
+  | tensorType : List Int → TensorElementType → ValueType
+  | quantizedTensorType : List Int → QuantizedTensorElementType → ValueType
+  | tokenType
+  | tupleType : List Valuetype → ValueType
 
 inductive TensorFloar32 where
 
 inductive StringType where
 
 inductive FunctionType where
-  | FunctionType : List ValueType → List ValueType → FunctionType
+  | functionType : List ValueType → List ValueType → FunctionType
