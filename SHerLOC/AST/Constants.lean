@@ -10,7 +10,7 @@ import SHerLOC.AST.Types
 
 -/
 
-namespace STableHLO
+namespace StableHLO
 
 inductive Constant where
   | booleanConstant (literal : Bool)
@@ -21,5 +21,6 @@ inductive Constant where
   | quantizedTensorConstant
   | stringConstant (literal : String)
   | enumConstant (choices : List String)
+  deriving Repr, Inhabited, Nonempty
 
-end STableHLO
+end StableHLO

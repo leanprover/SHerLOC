@@ -13,5 +13,6 @@ import SHerLOC.AST.Functions
 namespace StableHLO
 
 def Program := List Function
+  deriving Repr, Inhabited, Nonempty
 
 end StableHLO
