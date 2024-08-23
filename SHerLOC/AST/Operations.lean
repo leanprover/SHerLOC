@@ -120,6 +120,12 @@ inductive OpName where
   | uniform_quantize
   | while
   | xor
+  deriving Repr, Inhabited, Nonempty
+
+  structure Attribute where
+    id : AttrId
+    constant : Constant
+    deriving Repr, Inhabited, Nonempty
 
 mutual
 
@@ -128,12 +134,13 @@ mutual
       (id : UnusedId)
       (funcInputs : List ValueId)
       (body : List Operation)
+    deriving Repr, Inhabited, Nonempty
 
   inductive Operation where
     | stable
       (name : OpName)(inputValues : List ValueId)
       (inputFunctions : List InputFunc)
-      (inputAttributes : List Constant)
+      (inputAttributes : List Attribute)
       (outputs : List ValueId)
       (signature : FunctionType)
     | return
@@ -143,6 +150,7 @@ mutual
       (callee : FuncId)
       (arguments : ValueId)
       (signature : FunctionType)
+    deriving Repr, Inhabited, Nonempty
 
 end
 

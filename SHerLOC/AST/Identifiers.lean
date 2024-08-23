@@ -11,8 +11,12 @@ Authors: Jean-Baptiste Tristan
 
 namespace StableHLO
 
-def FuncId := Nat
-def ValueId := Nat
-def UnusedId := Nat
+abbrev FuncId := String
+
+abbrev ValueId := String
+
+abbrev UnusedId := String
+
+abbrev AttrId := String
 
 end StableHLO
