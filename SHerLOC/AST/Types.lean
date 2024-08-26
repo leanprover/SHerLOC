@@ -55,8 +55,17 @@ inductive TensorElementType where
   | complexType (t: ComplexType)
   deriving Repr, Inhabited, Nonempty
 
-inductive QuantizedTensorElementType where
-  | quant : Signedness → IntegerSize → Int → Int → FloatType → Int → List (Float × Int) → QuantizedTensorElementType
+structure QuantizationParameter where
+  quantizationScale : Float
+  quantizationZeroPoint: Int
+  deriving Repr, Inhabited, Nonempty
+
+structure QuantizedTensorElementType where
+  quantizationStorageType : IntegerType
+  quantizationStorageMinMax : Option (Int × Int)
+  quantizationExpressedType : FloatType
+  quantizationDimension : Option Int
+  quantizationParameters : List QuantizationParameter
   deriving Repr, Inhabited, Nonempty
 
 structure TensorType where
@@ -64,15 +73,17 @@ structure TensorType where
   tensorElementType : TensorElementType
   deriving Repr, Inhabited, Nonempty
 
+structure QuantizedTensorType where
+  shape : List Nat
+  quantizedTensorElementType : QuantizedTensorElementType
+  deriving Repr, Inhabited, Nonempty
+
 inductive ValueType where
   | tensorType (tensor : TensorType)
-  | quantizedTensorType (shape : List Int) (typ : QuantizedTensorElementType)
+  | quantizedTensorType (typ : QuantizedTensorType)
   | tokenType
   | tupleType (elements : List ValueType)
   deriving Repr, Inhabited, Nonempty
-
-inductive StringType where
-  deriving Repr
 
 structure FunctionType where
   domain : List ValueType
@@ -83,7 +94,7 @@ inductive NonValueType where
   | tensorElementType (t : TensorElementType)
   | quantizedTensorElementType (t: QuantizedTensorElementType)
   | functionType (t : FunctionType)
-  | stringType (t : StringType)
+  | stringType
   deriving Repr, Inhabited, Nonempty
 
 inductive SType where

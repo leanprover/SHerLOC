@@ -40,6 +40,13 @@ def ParsingState.column (st : ParsingState) : Nat :=
 def ParsingState.lookahead (st : ParsingState) (shift : Nat) : String :=
   st.source[st.index + shift]!.tok
 
+partial def ParsingState.search (st : ParsingState) (item : String) : Option Nat :=
+  if st.is item then some 0
+  else if st.index >= st.source.length then none
+  else match { st with index := st.index + 1 }.search item with
+    | some v => some (1 + v)
+    | none => none
+
 def ParsingState.isName (st : ParsingState) : Bool :=
   (st.tok.get ⟨0⟩).isAlphanum
   && st.tok.all fun c => c.isAlphanum || c = '_'
