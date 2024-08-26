@@ -94,7 +94,7 @@ inductive RngDistribution where
   | normal
   deriving Repr, Inhabited, Nonempty
 
-inductive RngAlgorith where
+inductive RngAlgorithm where
   | default
   | threeFry
   | philox
@@ -113,7 +113,7 @@ inductive EnumLiteral where
   | fftType (enum : FftType)
   | channelType (enum : ChannelType)
   | rngDistribution (enum : RngDistribution)
-  | rngAlgorith (enum : RngAlgorith)
+  | rngAlgorithm (enum : RngAlgorithm)
   | transposeA (enum : TransposeA)
   deriving Repr, Inhabited, Nonempty
 
