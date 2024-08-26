@@ -144,8 +144,8 @@ mutual
       (outputs : List ValueId)
       (signature : FunctionType)
     | return
-      (operands : ValueId)
-      (signature : ValueType)
+      (operands : List ValueId)
+      (signature : FunctionType)
     | call
       (callee : FuncId)
       (arguments : ValueId)

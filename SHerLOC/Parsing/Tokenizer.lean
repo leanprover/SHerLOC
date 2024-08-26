@@ -17,9 +17,9 @@ instance : ToString TokWithPos where
   toString := fun t : TokWithPos => s!"({t.line},{t.column},{t.tok})"
 
 def tokenize (src : List Char) : List TokWithPos := Id.run do
-  let mut lineNumber : Nat := 0
-  let mut lastColumnNumber : Nat := 0
-  let mut columnNumber : Nat := 0
+  let mut lineNumber : Nat := 1
+  let mut lastColumnNumber : Nat := 1
+  let mut columnNumber : Nat := 1
   let mut tokens : List TokWithPos := []
   let mut current : String := ""
   for c in src do
@@ -33,7 +33,7 @@ def tokenize (src : List Char) : List TokWithPos := Id.run do
         lastColumnNumber := columnNumber
       match c with
       | ' ' | ',' => columnNumber := columnNumber + 1
-      | '\n' => columnNumber := 0 ; lineNumber := lineNumber + 1
+      | '\n' => columnNumber := 1 ; lineNumber := lineNumber + 1
       | '\t' => panic "tokenize: tab not implemented yet"
       | c =>
         tokens := { tok := c.toString , line := lineNumber, column := lastColumnNumber } :: tokens

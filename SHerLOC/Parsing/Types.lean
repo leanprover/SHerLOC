@@ -57,7 +57,7 @@ def parseComplexType : PState ComplexType := do
 
 def parseTensorElementType : PState TensorElementType := do
   let st ← get
-  if st.is "i1" then return TensorElementType.booleanType
+  if st.is "i1" then shift ; return TensorElementType.booleanType
   let c := st.tok.get! ⟨ 0 ⟩
   if c = 's' || c = 'u' || c = 'i' then return TensorElementType.integerType <| ← parseIntegerType
   if c = 'f' || c = 'b' then return TensorElementType.floatType <| ← parseFloatType

@@ -14,6 +14,6 @@ def main (args : List String) : IO Unit := do
   let file : FilePath := args[0]!
   let content ← readFile file
   let r := StableHLO.tokenize content.data
-  IO.println s!"{r}"
+  -- IO.println s!"{r}"
   let content := StableHLO.parse content.data
   IO.println s!"{repr content}"

@@ -156,11 +156,26 @@ def parseStableOp : PState Operation := do
   let functiontype ← parseFunctionType
   -- TODO inputFunctions and inputAttributes
   let operation := Operation.stable opName arguments [] [] opOutputs functiontype
+  record st "Stable operation"
   return operation
+
+def parseReturn : PState Operation := do
+  let st ← get
+  parseItem "stablehlo.return"
+  let arguments ← parseOpInputs
+  parseItem ":"
+  let functiontype ← parseFunctionType
+  let parseResult := Operation.return arguments functiontype
+  record st "Return operation"
+  return parseResult
 
 -- TODO complete shortcut for now, ignoring return and call (and perhaps constant)
 def parseOperation : PState Operation := do
-  parseStableOp
+  let st ← get
+  if st.tok = "stablehlo.return" then parseReturn
+  else if st.tok = "func.call" then throw <| st.error "Operation call"
+  -- Missing call with results
+  else parseStableOp
 
 def parseOperations : PState (List Operation) :=
   parseList "{" "}" none parseOperation

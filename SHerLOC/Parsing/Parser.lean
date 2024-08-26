@@ -69,7 +69,7 @@ def ParsingState.isHexaDecimal (st : ParsingState) : Bool := Id.run do
   return b₁ && b₂ && b₃
 
 def ParsingState.error (st : ParsingState) (msg : String) : String :=
-  s!"{st.status.reverse} \n\n Parsing error line {st.line}, column {st.column}: expected {msg}, found {st.tok} "
+  s!"{st.status.reverse} \n\nParsing error line {st.line}, column {st.column}: expected {msg}, found {st.tok}"
 
 abbrev PState (T : Type) := StateT ParsingState (Except String) T
 
@@ -87,6 +87,7 @@ def parseItem (keyword : String) : PState Unit := do
   if ! st.is keyword then
     throw <| st.error keyword
   shift
+  record st s!"Item {keyword}"
 
 def parseId : PState String := do
   let st ← get
