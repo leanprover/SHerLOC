@@ -9,26 +9,28 @@ import SHerLOC.Parsing.Types
 
 namespace StableHLO
 
-def parseBooleanLiteral : PState Bool := do
+def parseBooleanLiteral : PState BooleanLiteral := do
   let st ← get
   if st.is "true" then
     shift
-    return true
+    return BooleanLiteral.true
   else if st.is "false" then
     shift
-    return false
+    return BooleanLiteral.false
   else throw <| st.error "Boolean literal"
 
 def parseBooleanConstant : PState Constant := do
   let b ← parseBooleanLiteral
   return Constant.booleanConstant b
 
-def parseIntegerLiteral : PState Nat := do
+def parseIntegerLiteral : PState IntegerLiteral := do
   let st ← get
-  let mut negative := false
+  let mut sign := Sign.plus
   if st.is "+" then shift
-  if st.is "-" then shift ; negative := true
-  parseDecimal
+  if st.is "-" then shift ; sign := Sign.minus
+  let nat ← parseDecimal
+  let parseResult := { sign := sign , decimal := nat }
+  return parseResult
 
 def parseIntegerConstant : PState Constant := do
   let i ← parseIntegerLiteral
@@ -38,19 +40,23 @@ def parseIntegerConstant : PState Constant := do
 
 def parseFloatLiteral : PState FloatLiteral := do
   let st ← get
-  let mut negative := false
+  let mut sign := Sign.plus
   if st.is "+" then shift
-  if st.is "-" then shift ; negative := true
-  let integerPart : Nat ← parseDecimal
-  let integerPart : Int := if negative then -integerPart else integerPart
-  let mut fractionalPart := 0
+  if st.is "-" then shift ; sign := Sign.minus
+  let nat ← parseDecimal
+  let integerPart := { sign := sign , decimal := nat }
+  let mut fractionalPart : IntegerLiteral := { sign := Sign.plus, decimal := 0 }
   if st.is "." then
     shift
-    fractionalPart ← parseDecimal
-  let mut scientificPart := 0
+    fractionalPart := {fractionalPart with decimal := ← parseDecimal}
+  let mut scientificPart : IntegerLiteral:= { sign := Sign.plus, decimal := 0 }
   if st.is "e" || st.is "E" then
     shift
-    scientificPart ← parseDecimal
+    let mut scientificSign := Sign.plus
+    if st.is "+" then shift
+    if st.is "-" then shift ; scientificSign := Sign.minus
+    let nat ← parseDecimal
+    scientificPart := { sign := scientificSign, decimal := nat }
   let parseResult :=
     { integerPart := integerPart,
       fractionalPart := fractionalPart,
@@ -64,19 +70,20 @@ def parseFloatConstant : PState Constant := do
   let floatType ← parseFloatType
   return Constant.floatConstant floatLiteral floatType
 
-def parseComplexLiteral : PState (FloatLiteral × FloatLiteral) := do
+def parseComplexLiteral : PState ComplexLiteral := do
   parseItem "("
   let realPart ← parseFloatLiteral
   parseItem ","
   let imaginaryPart ← parseFloatLiteral
   parseItem ")"
-  return (realPart,imaginaryPart)
+  let parseResult := { real := realPart, imaginary := imaginaryPart }
+  return parseResult
 
 def parseComplexConstant : PState Constant := do
   let complexLiteral ← parseComplexLiteral
   parseItem ":"
   let complexType ← parseComplexType
-  return Constant.complexConstant complexLiteral.1 complexLiteral.2 complexType
+  return Constant.complexConstant complexLiteral complexType
 
 def parseTensorConstant : PState Constant := do
   let st ← get

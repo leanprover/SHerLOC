@@ -118,8 +118,8 @@ inductive EnumLiteral where
   deriving Repr, Inhabited, Nonempty
 
 inductive Constant where
-  | booleanConstant (literal : Bool)
-  | integerConstant (literal : Int) (type : IntegerType)
+  | booleanConstant (literal : BooleanLiteral)
+  | integerConstant (literal : IntegerLiteral) (type : IntegerType)
   | floatConstant (literal : FloatLiteral) (type : FloatType)
   | complexConstant (literal : ComplexLiteral) (type : ComplexType)
   | tensorConstant (literal : TensorLiteral) (type : TensorType)
