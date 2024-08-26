@@ -12,4 +12,15 @@ def parseValueId : PState String := do
   parseItem "%"
   parseId
 
+def parseFuncId : PState String := do
+  parseItem "@"
+  parseId
+
+def parseUnusedId : PState String := do
+  parseItem "^"
+  parseId
+
+def parseAttrId : PState String := do
+  parseId
+
 end StableHLO
