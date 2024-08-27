@@ -44,20 +44,22 @@ def parseTensorElementType : PState TensorElementType := do
 def parseQuantizationStorageType : PState IntegerType := do
   parseIntegerType
 
--- makes parsing of types and constants mutually recursive
-def parseQuantizationStorageMinMax : PState (IntegerConstant × IntegerConstant) := do sorry
+def parseQuantizationStorageMinMax : PState (IntegerConstant × IntegerConstant) := do
+  let min ← parseIntegerConstant
+  let max ← parseIntegerConstant
+  return (min,max)
 
 def parseQuantizationExpressedType : PState FloatType := do
   parseFloatType
 
--- makes parsing of types and constants mutually recursive
-def parseQuantizationDimension : PState IntegerConstant := do sorry
+def parseQuantizationDimension : PState IntegerConstant := do
+  parseIntegerConstant
 
--- makes parsing of types and constants mutually recursive
-def parseQuantizationScale : PState FloatConsant := do sorry
+def parseQuantizationScale : PState FloatConstant := do
+  parseFloatConstant
 
--- makes parsing of types and constants mutually recursive
-def parseQuantizationZeroPoint : PState IntegerConstant := do sorry
+def parseQuantizationZeroPoint : PState IntegerConstant := do
+  parseIntegerConstant
 
 def parseQuantizationParameter : PState QuantizationParameter := do
   let quantizationScale ← parseQuantizationScale
