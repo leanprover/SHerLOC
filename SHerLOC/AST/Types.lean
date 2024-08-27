@@ -68,19 +68,20 @@ structure QuantizedTensorElementType where
   quantizationParameters : List QuantizationParameter
   deriving Repr, Inhabited, Nonempty
 
-structure TensorType where
-  shape : List Nat
-  tensorElementType : TensorElementType
+-- Here I deviate from the spec because it allows me to keep
+-- the grammer LL(1)
+inductive TensorElementTypeGen where
+  | classic (t : TensorElementType)
+  | quantized (t : QuantizedTensorElementType)
   deriving Repr, Inhabited, Nonempty
 
-structure QuantizedTensorType where
+structure TensorType where
   shape : List Nat
-  quantizedTensorElementType : QuantizedTensorElementType
+  tensorElementTypeGen : TensorElementTypeGen
   deriving Repr, Inhabited, Nonempty
 
 inductive ValueType where
   | tensorType (tensor : TensorType)
-  | quantizedTensorType (typ : QuantizedTensorType)
   | tokenType
   | tupleType (elements : List ValueType)
   deriving Repr, Inhabited, Nonempty

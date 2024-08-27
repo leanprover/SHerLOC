@@ -55,15 +55,6 @@ def parseComplexType : PState ComplexType := do
   parseItem ">"
   return t
 
-def parseTensorElementType : PState TensorElementType := do
-  let st ← get
-  if st.is "i1" then shift ; return TensorElementType.booleanType
-  let c := st.tok.get! ⟨ 0 ⟩
-  if c = 's' || c = 'u' || c = 'i' then return TensorElementType.integerType <| ← parseIntegerType
-  if c = 'f' || c = 'b' then return TensorElementType.floatType <| ← parseFloatType
-  if st.is "complex" then return TensorElementType.complexType <| ← parseComplexType
-  else throw <| st.error "TensorElementType"
-
 partial def parseShape : PState (List Nat) := do
   let st ← get
   if (st.lookahead 1).get! ⟨ 0 ⟩ = 'x'
@@ -73,13 +64,14 @@ partial def parseShape : PState (List Nat) := do
     return i :: shape
   else return []
 
-def parseTensorType : PState ValueType := do
-  parseItem "tensor"
-  parseItem "<"
-  let shape ← parseShape
-  let tensorElementType ← parseTensorElementType
-  parseItem ">"
-  return ValueType.tensorType { shape := shape , tensorElementType := tensorElementType}
+def parseTensorElementType : PState TensorElementType := do
+  let st ← get
+  if st.is "i1" then shift ; return TensorElementType.booleanType
+  let c := st.tok.get! ⟨ 0 ⟩
+  if c = 's' || c = 'u' || c = 'i' then return TensorElementType.integerType <| ← parseIntegerType
+  if c = 'f' || c = 'b' then return TensorElementType.floatType <| ← parseFloatType
+  if st.is "complex" then return TensorElementType.complexType <| ← parseComplexType
+  else throw <| st.error "TensorElementType"
 
 def parseQuantizationStorageType : PState IntegerType := do
   parseIntegerType
@@ -143,13 +135,23 @@ def parseQuantizedTensorElementType : PState QuantizedTensorElementType := do
     }
   return parseResult
 
-def parseQuantizedTensorType : PState ValueType := do
+def parseTensorElementTypeGen : PState TensorElementTypeGen := do
+  let st ← get
+  if st.tok = "!quant.uniform"
+  then
+    let quantizedTensorElementType ← parseQuantizedTensorElementType
+    return TensorElementTypeGen.quantized quantizedTensorElementType
+  else
+    let tensorElementType ← parseTensorElementType
+    return TensorElementTypeGen.classic tensorElementType
+
+def parseTensorType : PState TensorType := do
   parseItem "tensor"
   parseItem "<"
   let shape ← parseShape
-  let tensorQuantizedTensorElementType ← parseQuantizedTensorElementType
+  let tensorElementTypeGen ← parseTensorElementTypeGen
   parseItem ">"
-  return ValueType.quantizedTensorType { shape := shape , quantizedTensorElementType := tensorQuantizedTensorElementType}
+  return { shape := shape, tensorElementTypeGen := tensorElementTypeGen }
 
 def parseTokenType : PState ValueType := do
   parseItem "token"
@@ -165,13 +167,7 @@ partial def parseTupleType : PState ValueType := do
 partial def parseValueType : PState ValueType := do
   let st ← get
   match st.tok with
-  | "tensor" =>
-    if let some idx := st.search ">" then
-      (match st.lookahead (idx + 1) with
-      | "!quant.uniform" => parseQuantizedTensorType
-      | _ => parseTensorType
-      )
-    else throw <| st.error "Value Type: coult not disambiguate between tensor and quantized tensore"
+  | "tensor" => return ValueType.tensorType <| ← parseTensorType
   | "tuple" => parseTupleType
   | "token" => parseTokenType
   | _ => throw <| st.error "Value Type"

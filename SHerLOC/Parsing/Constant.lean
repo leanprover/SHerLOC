@@ -91,9 +91,16 @@ def parseComplexConstant : PState Constant := do
   let complexType ← parseComplexType
   return Constant.complexConstant complexLiteral complexType
 
+--def parseElementLiteral : PState ElementLiteral := do
+
+def parseTensorLiteral : PState TensorLiteral := do sorry
+
 def parseTensorConstant : PState Constant := do
-  let st ← get
-  throw <| st.error s!"Parser NIY: parseTensorConstant"
+  let tensorLiteral ← parseTensorLiteral
+  parseItem ":"
+  let tensorType ← parseTensorType
+  let parseResult := Constant.tensorConstant tensorLiteral tensorType
+  return parseResult
 
 def parseQuantizedTensorConstant : PState Constant := do
   let st ← get
@@ -186,10 +193,42 @@ def tryParseEnumLiteral (tok : String) : Option EnumLiteral :=
 --   let st ← get
 --   throw <| st.error s!"Constant"
 
+-- Types do not appear in literals
+-- Note that 'dense<3.4> : tensor<si32>' is described as a syntax error
+-- So we need type information during parsing
+-- Otherwise we could just parse a number and type check later
+
+-- 8 categories of constants
+-- of this 8 categories, 3 do not have an explicit type: String, Boolean, Enum
+-- With 1 token, we can disambiguate these 3
+-- The 5 others must have a type annotation following a ':'
+-- The type annotation is unambiguous, but not with only 1 token
+-- we can decide with 1 token if it is an integer
+-- we can decide with 1 token if it is a float
+-- we can decide with 1 token if it is a complex ('complex')
+-- we can decide with 1 token if it is a tensor
+-- but there are two types for tensors, and we need an arbitrary number of token to disambiguate them
+
 def parseConstant : PState Constant := do
   let st ← get
+
+  -- There are 8 categories of constants
+  -- Of those 8, 3 do not have explicit types but can be chosen unambiguously with 1 token
+  -- Enumerations
   if let some r := tryParseEnumLiteral st.tok then shift ; return Constant.enumConstant r
+  -- Booleans:
+  if st.tok = "true" || st.tok = "false" then return ← parseBooleanConstant
+  -- Strings:
+  -- Isn't the following a token on its own?
   if st.tok.get ⟨ 0 ⟩ = '"' then return ← parseStringConstant
+
+  -- For the 5 other categories, we have an explicit type
+  -- We need information about this type to disambiguate how to parse the literal
+  -- That information follows the ":" token
+  -- Of those 5 possible types, 3 can be chosen unambiguously with a single token (after ":")
+
+  -- The last two types are for Tensors (quantized or not)
+
   match st.tok with
   | "true" | "false" => parseBooleanConstant
   | _ =>

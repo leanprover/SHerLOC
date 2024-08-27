@@ -117,13 +117,15 @@ inductive EnumLiteral where
   | transposeA (enum : TransposeA)
   deriving Repr, Inhabited, Nonempty
 
+-- Deviation. There's not difference between classic and quantized tensor
+-- literals, and I gave them a common type in the hierarchy
 inductive Constant where
   | booleanConstant (literal : BooleanLiteral)
   | integerConstant (literal : IntegerLiteral) (type : IntegerType)
   | floatConstant (literal : FloatLiteral) (type : FloatType)
   | complexConstant (literal : ComplexLiteral) (type : ComplexType)
   | tensorConstant (literal : TensorLiteral) (type : TensorType)
-  | quantizedTensorConstant (literal : QuantizedTensorLiteral) (type : QuantizedTensorType)
+--  | quantizedTensorConstant (literal : QuantizedTensorLiteral) (type : QuantizedTensorType)
   | stringConstant (literal : String)
   | enumConstant (literal : EnumLiteral)
   deriving Repr, Inhabited, Nonempty
