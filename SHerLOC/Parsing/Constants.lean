@@ -44,9 +44,16 @@ def parseComplexConstant : PState ComplexConstant := do
   let complexType ← parseComplexType
   return { literal := complexLiteral, type := complexType }
 
---def parseElementLiteral : PState ElementLiteral := do
+def parseElementLiteral : PState ElementLiteral := do
+  let st ← get
+  if st.tok = "(" then return ElementLiteral.complexLiteral <| ← parseComplexLiteral
+  if st.tok = "true" || st.tok = "false" then return ElementLiteral.booleanLiteral <| ← parseBooleanLiteral
+  return ElementLiteral.floatLiteral <| ← parseFloatLiteral
 
-def parseTensorLiteral : PState TensorLiteral := do sorry
+-- Not correct, shortcut for temporary testing
+def parseTensorLiteral : PState TensorLiteral := do
+  parseItem "dense"
+  parseList "<" ">" (some ",") parseElementLiteral
 
 def parseTensorConstant : PState TensorConstant := do
   let tensorLiteral ← parseTensorLiteral
@@ -162,26 +169,21 @@ def parseConstant : PState Constant := do
 
   -- There are 8 categories of constants
   -- Of those 8, 3 do not have explicit types but can be chosen unambiguously with 1 token
-  -- Enumerations
+  -- Enumerations:
   if let some r := tryParseEnumLiteral st.tok then shift ; return Constant.enumConstant r
   -- Booleans:
   if st.tok = "true" || st.tok = "false" then return ← parseBooleanConstant
   -- Strings:
-  -- Isn't the following a token on its own?
-  if st.tok.get ⟨ 0 ⟩ = '"' then return ← parseStringConstant
-
-  -- For the 5 other categories, we have an explicit type
-  -- We need information about this type to disambiguate how to parse the literal
-  -- That information follows the ":" token
-  -- Of those 5 possible types, 3 can be chosen unambiguously with a single token (after ":")
-
-  -- The last two types are for Tensors (quantized or not)
-
-  match st.tok with
-  | "true" | "false" => parseBooleanConstant
-  | _ =>
-    match (st.lookahead 2).get! ⟨ 0 ⟩ with
-    | 's' | 'u' | 'i' /- Jax compatibility -/ => return Constant.integerConstant <| ← parseIntegerConstant
-    | _ => throw <| st.error s!"Constant"
+  if st.tok = "\"" then return ← parseStringConstant
+  -- Complex numbers:
+  if st.tok = "(" then return Constant.complexConstant <| ← parseComplexConstant
+  -- Tensors:
+  if st.tok = "dense" then return Constant.tensorConstant <| ← parseTensorConstant
+  let la := (st.lookahead 2).get! ⟨ 0 ⟩
+  -- Integers:
+  if la = 's' || la = 'u' || la = 'i' then return Constant.integerConstant <| ← parseIntegerConstant
+  -- FLoats:
+  if la = 'f' || la = 'b' || la = 't' then return Constant.floatConstant <| ← parseFloatConstant
+  throw <| st.error s!"Constant"
 
 end StableHLO

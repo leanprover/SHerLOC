@@ -86,12 +86,14 @@ def parseQuantizedTensorElementType : PState QuantizedTensorElementType := do
   parseItem "<"
   let quantizationStorageType ← parseQuantizationStorageType
   let mut quantizationStorageMinMax := none
-  if st.is "<" then
+  let st₁ ← get
+  if st₁.is "<" then
     quantizationStorageMinMax := some <| ← parseQuantizationStorageMinMax
   parseItem ":"
   let quantizationExpressedType ← parseQuantizationExpressedType
   let mut quantizationDimension := none
-  if st.is ":" then
+  let st₂ ← get
+  if st₂.is ":" then
     quantizationDimension := some <| ← parseQuantizationDimension
   parseItem ","
   let quantizationParameters ← parseQuantizationParameters

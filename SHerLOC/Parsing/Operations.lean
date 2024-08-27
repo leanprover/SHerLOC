@@ -250,41 +250,84 @@ def parseOpName : PState OpName := do
 def parseOpOutputs : PState (List ValueId) := do
   parseListAux "=" (some ",") parseValueId
 
-def parseOpInputs : PState (List ValueId) := do
+def parseOpInputValues : PState (List ValueId) := do
   parseList "(" ")" (some ",") parseValueId
 
-def parseStableOp : PState Operation := do
-  let st ← get
-  let mut opOutputs := []
-  if st.tok.get! ⟨ 0 ⟩ = '%' then
-    opOutputs ← parseOpOutputs
-    parseItem "="
-  let opName ← parseOpName
-  let arguments ← parseOpInputs
+def parseInputFuncInput : PState FuncInput := do
+  let id ← parseValueId
   parseItem ":"
-  let functiontype ← parseFunctionType
-  -- TODO inputFunctions and inputAttributes
-  let operation := Operation.stable opName arguments [] [] opOutputs functiontype
-  record st "Stable operation"
-  return operation
+  let typ ← parseValueType
+  return { id := id , typ := typ }
+
+def parseInputFuncInputs : PState (List FuncInput) := do
+  parseList "(" ")" (some ",") parseInputFuncInput
+
+def parseOpInputAttrs : PState (List Attribute) := do
+  parseAttributes
 
 def parseReturn : PState Operation := do
   let st ← get
   parseItem "stablehlo.return"
-  let arguments ← parseOpInputs
+  let arguments ← parseOpInputValues
   parseItem ":"
   let functiontype ← parseFunctionType
   let parseResult := Operation.return arguments functiontype
   record st "Return operation"
   return parseResult
 
+mutual
+
+partial def parseInputFunc : PState InputFunc := do
+  parseItem "{"
+  dbg_trace "parseInputFunc: 1"
+  let id ← parseUnusedId
+  dbg_trace "parseInputFunc: 2"
+  let funcInputs ← parseInputFuncInputs
+  dbg_trace "parseInputFunc: 3"
+  parseItem ":"
+  dbg_trace "parseInputFunc: 4"
+  let body ← parseInputFuncBody
+  dbg_trace "parseInputFunc: 5"
+  parseItem "}"
+  dbg_trace "parseInputFunc: 6"
+  return InputFunc.mk id funcInputs body
+
+partial def parseOpInputFuncs : PState (List InputFunc) := do
+  parseList "(" ")" (some ",") parseInputFunc
+
+partial def parseStableOp : PState Operation := do
+  let st ← get
+  dbg_trace s!"{st.tok}"
+  let mut opOutputs := []
+  if st.tok.get! ⟨ 0 ⟩ = '%' then
+    opOutputs ← parseOpOutputs
+    parseItem "="
+  let opName ← parseOpName
+  let opInputValues ← parseOpInputValues
+  let mut opInputFuncs := []
+  let st₁ ← get
+  if st₁.tok = "(" then opInputFuncs ← parseOpInputFuncs
+  let mut opInputAttrs := []
+  let st₂ ← get
+  if st₂.tok = "{" then opInputAttrs ← parseOpInputAttrs
+  parseItem ":"
+  let functiontype ← parseFunctionType
+  let operation := Operation.stable opName opInputValues opInputFuncs opInputAttrs opOutputs functiontype
+  record st "Stable operation"
+  return operation
+
 -- TODO complete shortcut for now, ignoring return and call (and perhaps constant)
-def parseOperation : PState Operation := do
+partial def parseOperation : PState Operation := do
   let st ← get
   if st.tok = "stablehlo.return" then parseReturn
   else if st.tok = "func.call" then throw <| st.error "Operation call"
   -- Missing call with results
   else parseStableOp
+
+partial def parseInputFuncBody : PState (List Operation) :=
+  parseListAux "}" none parseOperation
+
+end
 
 def parseOperations : PState (List Operation) :=
   parseList "{" "}" none parseOperation

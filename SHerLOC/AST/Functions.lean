@@ -14,11 +14,6 @@ import SHerLOC.AST.Operations
 
 namespace StableHLO
 
-structure FuncInput where
-  id : FuncId
-  typ : ValueType
-  deriving Repr, Inhabited, Nonempty
-
 structure Function where
   funcId : FuncId
   funcInputs : List FuncInput

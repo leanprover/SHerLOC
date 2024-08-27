@@ -127,12 +127,17 @@ inductive OpName where
     constant : Constant
     deriving Repr, Inhabited, Nonempty
 
+structure FuncInput where
+  id : FuncId
+  typ : ValueType
+  deriving Repr, Inhabited, Nonempty
+
 mutual
 
   inductive InputFunc where
     | mk
       (id : UnusedId)
-      (funcInputs : List ValueId)
+      (funcInputs : List FuncInput)
       (body : List Operation)
     deriving Repr, Inhabited, Nonempty
 

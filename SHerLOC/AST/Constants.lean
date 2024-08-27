@@ -28,17 +28,24 @@ structure ComplexConstant where
   type : ComplexType
   deriving Repr, Inhabited, Nonempty
 
+-- Diverging from spec
+-- I am going to defer until type checking to decide
+-- whether the literal matches its type
+-- This is because otherwise I have to lookahead arbitrarily far
+-- to figure out the details of the tensor type
 inductive ElementLiteral where
   | booleanLiteral (literal : BooleanLiteral)
-  | integerLiteral (literal : IntegerLiteral)
+  --| integerLiteral (literal : IntegerLiteral)
   | floatLiteral (literal : FloatLiteral)
   | complexLiteral (literal : ComplexLiteral)
   deriving Repr, Inhabited, Nonempty
 
-inductive TensorLiteral where
-  | element (elt : ElementLiteral)
-  | dimensions (dims : List TensorLiteral)
-  deriving Repr, Inhabited, Nonempty
+abbrev TensorLiteral := List ElementLiteral
+
+-- inductive TensorLiteral where
+--   | element (elt : ElementLiteral)
+--   | dimensions (dims : List TensorLiteral)
+--   deriving Repr, Inhabited, Nonempty
 
 structure TensorConstant where
   literal : TensorLiteral
