@@ -5,41 +5,9 @@ Authors: Jean-Baptiste Tristan
 -/
 import SHerLOC.AST.Basic
 import SHerLOC.Parsing.Parser
+import SHerLOC.Parsing.Numbers
 
 namespace StableHLO
-
-def parseIntegerType : PState IntegerType := do
-  let st ← get
-  match st.tok with
-  | "si2" => shift ; return { sign := Signedness.signed , size := IntegerSize.b2 }
-  | "si4" => shift ; return { sign := Signedness.signed , size := IntegerSize.b4 }
-  | "si8" => shift ; return { sign := Signedness.signed , size := IntegerSize.b8 }
-  | "si16" => shift ; return { sign := Signedness.signed , size := IntegerSize.b16 }
-  | "si32" => shift ; return { sign := Signedness.signed , size := IntegerSize.b32 }
-  | "si64" => shift ; return { sign := Signedness.signed , size := IntegerSize.b64 }
-  | "ui2" => shift ; return { sign := Signedness.unsigned , size := IntegerSize.b2 }
-  | "ui4" => shift ; return { sign := Signedness.unsigned , size := IntegerSize.b4 }
-  | "ui8" => shift ; return { sign := Signedness.unsigned , size := IntegerSize.b8 }
-  | "ui16" => shift ; return { sign := Signedness.unsigned , size := IntegerSize.b16 }
-  | "ui32" => shift ; return { sign := Signedness.unsigned , size := IntegerSize.b32 }
-  | "ui64" => shift ; return { sign := Signedness.unsigned , size := IntegerSize.b64 }
-  -- Jax compatibility
-  | "i32" => shift ; return { sign := Signedness.signed , size := IntegerSize.b32 }
-  | _ => throw <| st.error "Integer type"
-
-def parseFloatType : PState FloatType := do
-  let st ← get
-  match st.tok with
-  | "f8E4M3FN" => shift ; return FloatType.f8E4M3FN
-  | "f8E5M2" => shift ; return FloatType.f8E5M2
-  | "f8E4M3FNUZ" => shift ; return FloatType.f8E4M3FNUZ
-  | "f8E5M2FNUZ" => shift ; return FloatType.f8E5M2FNUZ
-  | "f8E4M3B11FNUZ" => shift ; return FloatType.f8E4M3B11FNUZ
-  | "bf16" => shift ; return FloatType.bf16
-  | "f16" => shift ; return FloatType.f16
-  | "f32" => shift ; return FloatType.f32
-  | "f64" => shift ; return FloatType.f64
-  | _ => throw <| st.error "Float type"
 
 def parseComplexElementType : PState ComplexType := do
   let st ← get
@@ -77,19 +45,19 @@ def parseQuantizationStorageType : PState IntegerType := do
   parseIntegerType
 
 -- makes parsing of types and constants mutually recursive
-def parseQuantizationStorageMinMax : PState (Int × Int) := do sorry
+def parseQuantizationStorageMinMax : PState (IntegerConstant × IntegerConstant) := do sorry
 
 def parseQuantizationExpressedType : PState FloatType := do
   parseFloatType
 
 -- makes parsing of types and constants mutually recursive
-def parseQuantizationDimension : PState Int := do sorry
+def parseQuantizationDimension : PState IntegerConstant := do sorry
 
 -- makes parsing of types and constants mutually recursive
-def parseQuantizationScale : PState Float := do sorry
+def parseQuantizationScale : PState FloatConsant := do sorry
 
 -- makes parsing of types and constants mutually recursive
-def parseQuantizationZeroPoint : PState Int := do sorry
+def parseQuantizationZeroPoint : PState IntegerConstant := do sorry
 
 def parseQuantizationParameter : PState QuantizationParameter := do
   let quantizationScale ← parseQuantizationScale

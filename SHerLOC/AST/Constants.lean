@@ -3,6 +3,7 @@ Copyright (c) 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jean-Baptiste Tristan
 -/
+import SHerLOC.AST.Numbers
 import SHerLOC.AST.Types
 
 /-!
@@ -17,25 +18,14 @@ inductive BooleanLiteral where
   | false
   deriving Repr, Inhabited, Nonempty
 
-inductive Sign where
-  | plus
-  | minus
-  deriving Repr, Inhabited, Nonempty
-
-structure IntegerLiteral where
-  sign : Sign
-  decimal : Nat
-  deriving Repr, Inhabited, Nonempty
-
-structure FloatLiteral where
-  integerPart : IntegerLiteral
-  fractionalPart : IntegerLiteral
-  scientificPart : IntegerLiteral
-  deriving Repr, Inhabited, Nonempty
-
 structure ComplexLiteral where
   real : FloatLiteral
   imaginary : FloatLiteral
+  deriving Repr, Inhabited, Nonempty
+
+structure ComplexConstant where
+  literal : ComplexLiteral
+  type : ComplexType
   deriving Repr, Inhabited, Nonempty
 
 inductive ElementLiteral where
@@ -50,10 +40,15 @@ inductive TensorLiteral where
   | dimensions (dims : List TensorLiteral)
   deriving Repr, Inhabited, Nonempty
 
-inductive QuantizedTensorLiteral where
-  | element (elt : ElementLiteral)
-  | dimensions (dims : List QuantizedTensorLiteral)
+structure TensorConstant where
+  literal : TensorLiteral
+  type : TensorType
   deriving Repr, Inhabited, Nonempty
+
+-- inductive QuantizedTensorLiteral where
+--   | element (elt : ElementLiteral)
+--   | dimensions (dims : List QuantizedTensorLiteral)
+--   deriving Repr, Inhabited, Nonempty
 
 inductive ComparisonDirection where
   | eq
@@ -121,10 +116,10 @@ inductive EnumLiteral where
 -- literals, and I gave them a common type in the hierarchy
 inductive Constant where
   | booleanConstant (literal : BooleanLiteral)
-  | integerConstant (literal : IntegerLiteral) (type : IntegerType)
-  | floatConstant (literal : FloatLiteral) (type : FloatType)
-  | complexConstant (literal : ComplexLiteral) (type : ComplexType)
-  | tensorConstant (literal : TensorLiteral) (type : TensorType)
+  | integerConstant (constant : IntegerConstant)
+  | floatConstant (constant : FloatConstant)
+  | complexConstant (constant : ComplexConstant)
+  | tensorConstant (constant : TensorConstant)
 --  | quantizedTensorConstant (literal : QuantizedTensorLiteral) (type : QuantizedTensorType)
   | stringConstant (literal : String)
   | enumConstant (literal : EnumLiteral)

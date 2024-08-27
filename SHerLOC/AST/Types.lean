@@ -3,6 +3,7 @@ Copyright (c) 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jean-Baptiste Tristan
 -/
+import SHerLOC.AST.Numbers
 
 /-!
 # Types
@@ -10,38 +11,6 @@ Authors: Jean-Baptiste Tristan
 -/
 
 namespace StableHLO
-
-inductive Signedness where
-  | signed
-  | unsigned
-  deriving Repr, Inhabited, Nonempty
-
-inductive IntegerSize where
-  | b2
-  | b4
-  | b8
-  | b16
-  | b32
-  | b64
-  deriving Repr, Inhabited, Nonempty
-
-structure IntegerType where
-  sign : Signedness
-  size : IntegerSize
-  deriving Repr, Inhabited, Nonempty
-
-inductive FloatType where
-  | f8E4M3FN
-  | f8E5M2
-  | f8E4M3FNUZ
-  | f8E5M2FNUZ
-  | f8E4M3B11FNUZ
-  | bf16
-  | f16
-  | f32
-  | f64
-  | tf32
-  deriving Repr, Inhabited, Nonempty
 
 inductive ComplexType where
   | f32
@@ -56,15 +25,15 @@ inductive TensorElementType where
   deriving Repr, Inhabited, Nonempty
 
 structure QuantizationParameter where
-  quantizationScale : Float
-  quantizationZeroPoint: Int
+  quantizationScale : FloatConstant
+  quantizationZeroPoint: IntegerConstant
   deriving Repr, Inhabited, Nonempty
 
 structure QuantizedTensorElementType where
   quantizationStorageType : IntegerType
-  quantizationStorageMinMax : Option (Int × Int)
+  quantizationStorageMinMax : Option (IntegerConstant × IntegerConstant)
   quantizationExpressedType : FloatType
-  quantizationDimension : Option Int
+  quantizationDimension : Option IntegerConstant
   quantizationParameters : List QuantizationParameter
   deriving Repr, Inhabited, Nonempty
 

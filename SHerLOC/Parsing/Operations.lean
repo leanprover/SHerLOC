@@ -5,7 +5,7 @@ Authors: Jean-Baptiste Tristan
 -/
 import SHerLOC.AST.Basic
 import SHerLOC.Parsing.Parser
-import SHerLOC.Parsing.Constant
+import SHerLOC.Parsing.Constants
 import SHerLOC.Parsing.Identifiers
 
 namespace StableHLO

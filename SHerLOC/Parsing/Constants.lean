@@ -29,53 +29,6 @@ def parseBooleanConstant : PState Constant := do
   let b ← parseBooleanLiteral
   return Constant.booleanConstant b
 
-def parseIntegerLiteral : PState IntegerLiteral := do
-  let st ← get
-  let mut sign := Sign.plus
-  if st.is "+" then shift
-  if st.is "-" then shift ; sign := Sign.minus
-  let nat ← parseDecimal
-  let parseResult := { sign := sign , decimal := nat }
-  return parseResult
-
-def parseIntegerConstant : PState Constant := do
-  let i ← parseIntegerLiteral
-  parseItem ":"
-  let t ← parseIntegerType
-  return Constant.integerConstant i t
-
-def parseFloatLiteral : PState FloatLiteral := do
-  let st ← get
-  let mut sign := Sign.plus
-  if st.is "+" then shift
-  if st.is "-" then shift ; sign := Sign.minus
-  let nat ← parseDecimal
-  let integerPart := { sign := sign , decimal := nat }
-  let mut fractionalPart : IntegerLiteral := { sign := Sign.plus, decimal := 0 }
-  if st.is "." then
-    shift
-    fractionalPart := {fractionalPart with decimal := ← parseDecimal}
-  let mut scientificPart : IntegerLiteral:= { sign := Sign.plus, decimal := 0 }
-  if st.is "e" || st.is "E" then
-    shift
-    let mut scientificSign := Sign.plus
-    if st.is "+" then shift
-    if st.is "-" then shift ; scientificSign := Sign.minus
-    let nat ← parseDecimal
-    scientificPart := { sign := scientificSign, decimal := nat }
-  let parseResult :=
-    { integerPart := integerPart,
-      fractionalPart := fractionalPart,
-      scientificPart := scientificPart
-    }
-  return parseResult
-
-def parseFloatConstant : PState Constant := do
-  let floatLiteral ← parseFloatLiteral
-  parseItem ":"
-  let floatType ← parseFloatType
-  return Constant.floatConstant floatLiteral floatType
-
 def parseComplexLiteral : PState ComplexLiteral := do
   parseItem "("
   let realPart ← parseFloatLiteral
@@ -85,26 +38,21 @@ def parseComplexLiteral : PState ComplexLiteral := do
   let parseResult := { real := realPart, imaginary := imaginaryPart }
   return parseResult
 
-def parseComplexConstant : PState Constant := do
+def parseComplexConstant : PState ComplexConstant := do
   let complexLiteral ← parseComplexLiteral
   parseItem ":"
   let complexType ← parseComplexType
-  return Constant.complexConstant complexLiteral complexType
+  return { literal := complexLiteral, type := complexType }
 
 --def parseElementLiteral : PState ElementLiteral := do
 
 def parseTensorLiteral : PState TensorLiteral := do sorry
 
-def parseTensorConstant : PState Constant := do
+def parseTensorConstant : PState TensorConstant := do
   let tensorLiteral ← parseTensorLiteral
   parseItem ":"
   let tensorType ← parseTensorType
-  let parseResult := Constant.tensorConstant tensorLiteral tensorType
-  return parseResult
-
-def parseQuantizedTensorConstant : PState Constant := do
-  let st ← get
-  throw <| st.error s!"Parser NIY: parseQuantizedTensorConstant"
+  return { literal := tensorLiteral, type := tensorType }
 
 def parseStringLiteral : PState String := do
   let st ← get
@@ -233,7 +181,7 @@ def parseConstant : PState Constant := do
   | "true" | "false" => parseBooleanConstant
   | _ =>
     match (st.lookahead 2).get! ⟨ 0 ⟩ with
-    | 's' | 'u' | 'i' /- Jax compatibility -/ => parseIntegerConstant
+    | 's' | 'u' | 'i' /- Jax compatibility -/ => return Constant.integerConstant <| ← parseIntegerConstant
     | _ => throw <| st.error s!"Constant"
 
 end StableHLO
