@@ -43,6 +43,11 @@ inductive FloatType where
   | tf32
   deriving Repr, Inhabited, Nonempty
 
+inductive NumberType where
+  | integerType (type : IntegerType)
+  | floatType (type: FloatType)
+  deriving Repr, Inhabited, Nonempty
+
 inductive Sign where
   | plus
   | minus
@@ -67,6 +72,13 @@ structure FloatLiteral where
 structure FloatConstant where
   literal : FloatLiteral
   type : FloatType
+  deriving Repr, Inhabited, Nonempty
+
+-- We use this when we want to delay figuring out
+-- if we are dealing with an integer or a float until type checking
+structure NumberConstant where
+  literal : FloatLiteral
+  type : NumberType
   deriving Repr, Inhabited, Nonempty
 
 end StableHLO

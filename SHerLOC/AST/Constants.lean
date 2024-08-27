@@ -125,6 +125,7 @@ inductive Constant where
   | booleanConstant (literal : BooleanLiteral)
   | integerConstant (constant : IntegerConstant)
   | floatConstant (constant : FloatConstant)
+  | numberConsant (constant : NumberConstant)
   | complexConstant (constant : ComplexConstant)
   | tensorConstant (constant : TensorConstant)
 --  | quantizedTensorConstant (literal : QuantizedTensorLiteral) (type : QuantizedTensorType)

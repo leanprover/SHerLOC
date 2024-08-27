@@ -179,11 +179,6 @@ def parseConstant : PState Constant := do
   if st.tok = "(" then return Constant.complexConstant <| ← parseComplexConstant
   -- Tensors:
   if st.tok = "dense" then return Constant.tensorConstant <| ← parseTensorConstant
-  let la := (st.lookahead 2).get! ⟨ 0 ⟩
-  -- Integers:
-  if la = 's' || la = 'u' || la = 'i' then return Constant.integerConstant <| ← parseIntegerConstant
-  -- FLoats:
-  if la = 'f' || la = 'b' || la = 't' then return Constant.floatConstant <| ← parseFloatConstant
-  throw <| st.error s!"Constant"
+  return Constant.numberConsant <| ← parserNumberConstant
 
 end StableHLO

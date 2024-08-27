@@ -8,24 +8,26 @@ import SHerLOC.Parsing.Parser
 
 namespace StableHLO
 
+def tryParseIntegerType (tok : String) : Option IntegerType :=
+  match tok with
+  | "si2" => some { sign := Signedness.signed , size := IntegerSize.b2 }
+  | "si4" => some { sign := Signedness.signed , size := IntegerSize.b4 }
+  | "si8" => some { sign := Signedness.signed , size := IntegerSize.b8 }
+  | "si16" => some { sign := Signedness.signed , size := IntegerSize.b16 }
+  | "si32" => some { sign := Signedness.signed , size := IntegerSize.b32 }
+  | "si64" => some { sign := Signedness.signed , size := IntegerSize.b64 }
+  | "ui2" => some { sign := Signedness.unsigned , size := IntegerSize.b2 }
+  | "ui4" => some { sign := Signedness.unsigned , size := IntegerSize.b4 }
+  | "ui8" => some { sign := Signedness.unsigned , size := IntegerSize.b8 }
+  | "ui16" => some { sign := Signedness.unsigned , size := IntegerSize.b16 }
+  | "ui32" => some { sign := Signedness.unsigned , size := IntegerSize.b32 }
+  | "ui64" => some { sign := Signedness.unsigned , size := IntegerSize.b64 }
+  | _ => none
+
 def parseIntegerType : PState IntegerType := do
   let st ← get
-  match st.tok with
-  | "si2" => shift ; return { sign := Signedness.signed , size := IntegerSize.b2 }
-  | "si4" => shift ; return { sign := Signedness.signed , size := IntegerSize.b4 }
-  | "si8" => shift ; return { sign := Signedness.signed , size := IntegerSize.b8 }
-  | "si16" => shift ; return { sign := Signedness.signed , size := IntegerSize.b16 }
-  | "si32" => shift ; return { sign := Signedness.signed , size := IntegerSize.b32 }
-  | "si64" => shift ; return { sign := Signedness.signed , size := IntegerSize.b64 }
-  | "ui2" => shift ; return { sign := Signedness.unsigned , size := IntegerSize.b2 }
-  | "ui4" => shift ; return { sign := Signedness.unsigned , size := IntegerSize.b4 }
-  | "ui8" => shift ; return { sign := Signedness.unsigned , size := IntegerSize.b8 }
-  | "ui16" => shift ; return { sign := Signedness.unsigned , size := IntegerSize.b16 }
-  | "ui32" => shift ; return { sign := Signedness.unsigned , size := IntegerSize.b32 }
-  | "ui64" => shift ; return { sign := Signedness.unsigned , size := IntegerSize.b64 }
-  -- Jax compatibility
-  | "i32" => shift ; return { sign := Signedness.signed , size := IntegerSize.b32 }
-  | _ => throw <| st.error "Integer type"
+  if let some r := tryParseIntegerType st.tok then shift ; return r
+  else throw <| st.error "Integer type"
 
 def parseIntegerLiteral : PState IntegerLiteral := do
   let st ← get
@@ -42,19 +44,23 @@ def parseIntegerConstant : PState IntegerConstant := do
   let t ← parseIntegerType
   return { literal := i, type := t }
 
+def tryParseFloatType (tok : String) : Option FloatType := do
+  match tok with
+  | "f8E4M3FN" => some FloatType.f8E4M3FN
+  | "f8E5M2" => some FloatType.f8E5M2
+  | "f8E4M3FNUZ" => some FloatType.f8E4M3FNUZ
+  | "f8E5M2FNUZ" => some FloatType.f8E5M2FNUZ
+  | "f8E4M3B11FNUZ" => some FloatType.f8E4M3B11FNUZ
+  | "bf16" => some FloatType.bf16
+  | "f16" => some FloatType.f16
+  | "f32" => some FloatType.f32
+  | "f64" => some FloatType.f64
+  | _ => none
+
 def parseFloatType : PState FloatType := do
   let st ← get
-  match st.tok with
-  | "f8E4M3FN" => shift ; return FloatType.f8E4M3FN
-  | "f8E5M2" => shift ; return FloatType.f8E5M2
-  | "f8E4M3FNUZ" => shift ; return FloatType.f8E4M3FNUZ
-  | "f8E5M2FNUZ" => shift ; return FloatType.f8E5M2FNUZ
-  | "f8E4M3B11FNUZ" => shift ; return FloatType.f8E4M3B11FNUZ
-  | "bf16" => shift ; return FloatType.bf16
-  | "f16" => shift ; return FloatType.f16
-  | "f32" => shift ; return FloatType.f32
-  | "f64" => shift ; return FloatType.f64
-  | _ => throw <| st.error "Float type"
+  if let some r := tryParseFloatType st.tok then shift ; return r
+  else throw <| st.error "Float type"
 
 def parseFloatLiteral : PState FloatLiteral := do
   let st ← get
@@ -64,15 +70,18 @@ def parseFloatLiteral : PState FloatLiteral := do
   let nat ← parseDecimal
   let integerPart := { sign := sign , decimal := nat }
   let mut fractionalPart : IntegerLiteral := { sign := Sign.plus, decimal := 0 }
-  if st.is "." then
+  let st₁ ← get
+  if st₁.is "." then
     shift
     fractionalPart := {fractionalPart with decimal := ← parseDecimal}
   let mut scientificPart : IntegerLiteral:= { sign := Sign.plus, decimal := 0 }
-  if st.is "e" || st.is "E" then
+  let st₂ ← get
+  if st₂.is "e" || st₂.is "E" then
     shift
     let mut scientificSign := Sign.plus
-    if st.is "+" then shift
-    if st.is "-" then shift ; scientificSign := Sign.minus
+    let st₃ ← get
+    if st₃.is "+" then shift
+    if st₃.is "-" then shift ; scientificSign := Sign.minus
     let nat ← parseDecimal
     scientificPart := { sign := scientificSign, decimal := nat }
   let parseResult :=
@@ -87,5 +96,17 @@ def parseFloatConstant : PState FloatConstant := do
   parseItem ":"
   let floatType ← parseFloatType
   return { literal := floatLiteral, type := floatType }
+
+def parseNumberType : PState NumberType := do
+  let st ← get
+  if let some r := tryParseIntegerType st.tok then shift ; return NumberType.integerType r
+  else if let some r := tryParseFloatType st.tok then shift ; return NumberType.floatType r
+  else throw <| st.error "Number type"
+
+def parserNumberConstant : PState NumberConstant := do
+  let literal ← parseFloatLiteral
+  parseItem ":"
+  let numberType ← parseNumberType
+  return { literal := literal, type :=numberType }
 
 end StableHLO

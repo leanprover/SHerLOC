@@ -23,14 +23,9 @@ def parseComplexType : PState ComplexType := do
   parseItem ">"
   return t
 
+-- TODO
 partial def parseShape : PState (List Nat) := do
-  let st ← get
-  if (st.lookahead 1).get! ⟨ 0 ⟩ = 'x'
-  then
-    let i ← parseDecimal
-    let shape ← parseShape
-    return i :: shape
-  else return []
+  return []
 
 def parseTensorElementType : PState TensorElementType := do
   let st ← get
