@@ -1,5 +1,6 @@
 module @jit_f attributes {mhlo.num_partitions = 1 : si32, mhlo.num_replicas = 1 : si32} {
   func.func public @main(%arg0: tensor<si32> {mhlo.layout_mode = "default"}, %arg1: tensor<si32> {mhlo.layout_mode = "default"}) -> (tensor<si32> {jax.result_info = "default", mhlo.layout_mode = "default"}) {
+    %0 = stablehlo.multiply (%c, %arg0) : (tensor<2x4xsi32>, tensor<2x4xsi32>) -> ( tensor<3x4xsi32> )
     %0 = stablehlo.multiply (%c, %arg0) : (tensor<si32>, tensor<si32>) -> ( tensor<si32> )
     %0 = stablehlo.multiply (%c, %arg0) : (tensor<f32>, token) -> ( tensor<si32> )
     %1 = stablehlo.add (%0, %arg1) : (tensor<si32>, tensor<si32>) -> ( tensor<si32> )

@@ -11,10 +11,9 @@ namespace StableHLO
 
 def parseComplexElementType : PState ComplexType := do
   let st ← get
-  match st.tok with
-  | "f32" => shift ; return ComplexType.f32
-  | "f64" => shift ; return ComplexType.f64
-  | _ => throw <| st.error "Complex element type"
+  if st.is "f32" then parseItem "f32" ; return ComplexType.f32
+  else if st.is "f64" then parseItem "f64" ; return ComplexType.f64
+  else throw <| st.error "Complex element type"
 
 def parseComplexType : PState ComplexType := do
   parseItem "complex"
@@ -23,17 +22,21 @@ def parseComplexType : PState ComplexType := do
   parseItem ">"
   return t
 
--- TODO
 partial def parseShape : PState (List Nat) := do
-  return []
+  let st ← get
+  if ! st.isDigit then return []
+  else
+    let dim ← parseDecimal
+    parseItem "x"
+    let dims ← parseShape
+    return dim :: dims
 
 def parseTensorElementType : PState TensorElementType := do
   let st ← get
-  if st.is "i1" then shift ; return TensorElementType.booleanType
-  let c := st.tok.get! ⟨ 0 ⟩
-  if c = 's' || c = 'u' || c = 'i' then return TensorElementType.integerType <| ← parseIntegerType
-  if c = 'f' || c = 'b' then return TensorElementType.floatType <| ← parseFloatType
-  if st.is "complex" then return TensorElementType.complexType <| ← parseComplexType
+  if st.is "i1" then parseItem "i1" ; return TensorElementType.booleanType
+  else if st.is "complex" then return TensorElementType.complexType <| ← parseComplexType
+  else if let some r ← tryParseIntegerType then return TensorElementType.integerType r
+  else if let some r ← tryParseFloatType then return TensorElementType.floatType r
   else throw <| st.error "TensorElementType"
 
 def parseQuantizationStorageType : PState IntegerType := do
@@ -76,7 +79,6 @@ def parseQuantizationParameters : PState (List QuantizationParameter) := do
     return [quantizationParameter]
 
 def parseQuantizedTensorElementType : PState QuantizedTensorElementType := do
-  let st ← get
   parseItem "!quant.uniform"
   parseItem "<"
   let quantizationStorageType ← parseQuantizationStorageType
@@ -104,7 +106,7 @@ def parseQuantizedTensorElementType : PState QuantizedTensorElementType := do
 
 def parseTensorElementTypeGen : PState TensorElementTypeGen := do
   let st ← get
-  if st.tok = "!quant.uniform"
+  if st.is "!quant.uniform"
   then
     let quantizedTensorElementType ← parseQuantizedTensorElementType
     return TensorElementTypeGen.quantized quantizedTensorElementType
@@ -133,11 +135,10 @@ partial def parseTupleType : PState ValueType := do
 
 partial def parseValueType : PState ValueType := do
   let st ← get
-  match st.tok with
-  | "tensor" => return ValueType.tensorType <| ← parseTensorType
-  | "tuple" => parseTupleType
-  | "token" => parseTokenType
-  | _ => throw <| st.error "Value Type"
+  if st.is "tensor" then return ValueType.tensorType <| ← parseTensorType
+  else if st.is "tuple" then parseTupleType
+  else if st.is "token" then parseTokenType
+  else throw <| st.error "Value Type"
 
 end
 
