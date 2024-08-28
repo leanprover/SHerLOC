@@ -35,27 +35,21 @@ structure ComplexConstant where
 -- to figure out the details of the tensor type
 inductive ElementLiteral where
   | booleanLiteral (literal : BooleanLiteral)
-  --| integerLiteral (literal : IntegerLiteral)
   | floatLiteral (literal : FloatLiteral)
   | complexLiteral (literal : ComplexLiteral)
   deriving Repr, Inhabited, Nonempty
 
-abbrev TensorLiteral := List ElementLiteral
+inductive DenseLiteral where
+  | denseDimension (literal : List DenseLiteral)
+  | denseElements (literal : List ElementLiteral)
+  deriving Repr, Inhabited, Nonempty
 
--- inductive TensorLiteral where
---   | element (elt : ElementLiteral)
---   | dimensions (dims : List TensorLiteral)
---   deriving Repr, Inhabited, Nonempty
+abbrev TensorLiteral := DenseLiteral
 
 structure TensorConstant where
   literal : TensorLiteral
   type : TensorType
   deriving Repr, Inhabited, Nonempty
-
--- inductive QuantizedTensorLiteral where
---   | element (elt : ElementLiteral)
---   | dimensions (dims : List QuantizedTensorLiteral)
---   deriving Repr, Inhabited, Nonempty
 
 inductive ComparisonDirection where
   | eq
@@ -128,7 +122,6 @@ inductive Constant where
   | numberConsant (constant : NumberConstant)
   | complexConstant (constant : ComplexConstant)
   | tensorConstant (constant : TensorConstant)
---  | quantizedTensorConstant (literal : QuantizedTensorLiteral) (type : QuantizedTensorType)
   | stringConstant (literal : String)
   | enumConstant (literal : EnumLiteral)
   deriving Repr, Inhabited, Nonempty

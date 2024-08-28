@@ -128,7 +128,6 @@ def parseOpName : PState OpName := do
   if st.is "stablehlo.xor" then parseItem "stablehlo.xor" ; return OpName.xor
   throw <| st.error "OpName"
 
-
 def parseOpOutputs : PState (List ValueId) := do
   parseListAux "=" (some ",") parseValueId
 
@@ -188,12 +187,9 @@ partial def parseStableOp : PState Operation := do
   let operation := Operation.stable opName opInputValues opInputFuncs opInputAttrs opOutputs functiontype
   return operation
 
--- TODO complete shortcut for now, ignoring return and call (and perhaps constant)
 partial def parseOperation : PState Operation := do
   let st ← get
   if st.is "stablehlo.return" then parseReturn
-  else if st.is "func.call" then throw <| st.error "Operation call"
-  -- Missing call with results
   else parseStableOp
 
 partial def parseInputFuncBody : PState (List Operation) :=

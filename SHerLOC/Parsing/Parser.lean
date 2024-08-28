@@ -61,9 +61,6 @@ def ParsingState.error (st : ParsingState) (msg : String) : String := Id.run do
 --   let info : NonTerminal := { startLine := st.line, startColumn := st.column, endLine := st'.line, endColumn := st'.column, nonTerminal := nonTerminal }
 --   set { st' with status := info :: st'.status }
 
-def shift : PState Unit := do
-  throw "No mor shift"
-
 def skip : PState Unit := do
   let st ← get
   let mut count := 0
@@ -102,7 +99,6 @@ def parseItem (keyword : String) : PState Unit := do
       index := st.index + keyword.length,
       columnNumber := st.columnNumber + keyword.length
       }
-    dbg_trace s!"Parsed keyword {keyword}"
   else
     throw <| st.error keyword
 
@@ -119,7 +115,6 @@ def parseId : PState String := do
       index := st.index + token.length,
       columnNumber := st.columnNumber + token.length
     }
-    dbg_trace s!"Parsed id {token}"
     return token
   else
     throw <| st.error s!"Id"
@@ -137,7 +132,6 @@ def parseDecimal : PState Nat := do
       index := st.index + token.length,
       columnNumber := st.columnNumber + token.length
     }
-    dbg_trace s!"Parsed decimal {token.toNat!}"
     return token.toNat!
   else
     throw <| st.error s!"Decimal"
@@ -167,7 +161,6 @@ def parseString : PState String := do
     columnNumber := st.columnNumber + token.length
    }
   parseItem "\""
-  dbg_trace s!"Parsed string {token}"
   return token
 
 partial def parseListAux (closingMark : String) (separator : Option String) (parse : PState T) : PState (List T) := do

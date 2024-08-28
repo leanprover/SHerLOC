@@ -33,7 +33,7 @@ def parseIntegerLiteral : PState IntegerLiteral := do
   let st ← get
   let mut sign := Sign.plus
   if st.is "+" then parseItem "+"
-  if st.is "-" then parseItem "-" ; sign := Sign.minus
+  else if st.is "-" then parseItem "-" ; sign := Sign.minus
   let nat ← parseDecimal
   let parseResult := { sign := sign , decimal := nat }
   return parseResult
@@ -66,7 +66,7 @@ def parseFloatLiteral : PState FloatLiteral := do
   let st ← get
   let mut sign := Sign.plus
   if st.is "+" then parseItem "+"
-  if st.is "-" then parseItem "-" ; sign := Sign.minus
+  else if st.is "-" then parseItem "-" ; sign := Sign.minus
   let nat ← parseDecimal
   let integerPart := { sign := sign , decimal := nat }
   let mut fractionalPart : IntegerLiteral := { sign := Sign.plus, decimal := 0 }
@@ -82,7 +82,7 @@ def parseFloatLiteral : PState FloatLiteral := do
     let mut scientificSign := Sign.plus
     let st₃ ← get
     if st₃.is "+" then parseItem "+"
-    if st₃.is "-" then parseItem "-" ; scientificSign := Sign.minus
+    else if st₃.is "-" then parseItem "-" ; scientificSign := Sign.minus
     let nat ← parseDecimal
     scientificPart := { sign := scientificSign, decimal := nat }
   let parseResult :=

@@ -36,10 +36,33 @@ def parseElementLiteral : PState ElementLiteral := do
   if let some r ← tryParseBooleanLiteral then return ElementLiteral.booleanLiteral  r
   return ElementLiteral.floatLiteral <| ← parseFloatLiteral
 
--- Not correct, shortcut for temporary testing
+def parseDenseElements (closingMark : String) : PState (List ElementLiteral) := do
+  parseListAux closingMark (some ",") parseElementLiteral
+
+partial def parseDenseLiteral : PState DenseLiteral := do
+  let st ← get
+  if st.is "[" then
+    let denseDimension ← parseList "[" "]" (some ",") parseDenseLiteral
+    return DenseLiteral.denseDimension denseDimension
+  else
+    parseItem "["
+    let denseElements ← parseDenseElements "]"
+    parseItem "]"
+    return DenseLiteral.denseElements denseElements
+
 def parseTensorLiteral : PState TensorLiteral := do
   parseItem "dense"
-  parseList "<" ">" (some ",") parseElementLiteral
+  parseItem "<"
+  let st ← get
+  if st.is "[" then
+    let denseLiteral ← parseDenseLiteral
+    parseItem ">"
+    return denseLiteral
+  else
+    let denseElements ← parseDenseElements ">"
+    let denseLiteral := DenseLiteral.denseElements denseElements
+    parseItem ">"
+    return denseLiteral
 
 def parseTensorConstant : PState TensorConstant := do
   let tensorLiteral ← parseTensorLiteral

@@ -151,10 +151,6 @@ mutual
     | return
       (operands : List ValueId)
       (signature : FunctionType)
-    | call
-      (callee : FuncId)
-      (arguments : ValueId)
-      (signature : FunctionType)
     deriving Repr, Inhabited, Nonempty
 
 end
