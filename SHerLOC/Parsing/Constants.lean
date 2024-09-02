@@ -45,9 +45,7 @@ partial def parseDenseLiteral : PState DenseLiteral := do
     let denseDimension ← parseList "[" "]" (some ",") parseDenseLiteral
     return DenseLiteral.denseDimension denseDimension
   else
-    parseItem "["
     let denseElements ← parseDenseElements "]"
-    parseItem "]"
     return DenseLiteral.denseElements denseElements
 
 def parseTensorLiteral : PState TensorLiteral := do

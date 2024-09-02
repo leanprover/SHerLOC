@@ -151,6 +151,9 @@ mutual
     | return
       (operands : List ValueId)
       (signature : FunctionType)
+    | constant
+      (outputs : List ValueId)
+      (value : Constant)
     deriving Repr, Inhabited, Nonempty
 
 end

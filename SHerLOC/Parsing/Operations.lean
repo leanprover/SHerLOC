@@ -175,18 +175,25 @@ partial def parseStableOp : PState Operation := do
   if st.is "%" then
     opOutputs ← parseOpOutputs
     parseItem "="
-  let opName ← parseOpName
-  let opInputValues ← parseOpInputValues
-  let mut opInputFuncs := []
-  let st₁ ← get
-  if st₁.is "(" then opInputFuncs ← parseOpInputFuncs
-  let mut opInputAttrs := []
-  let st₂ ← get
-  if st₂.is "{" then opInputAttrs ← parseOpInputAttrs
-  parseItem ":"
-  let functiontype ← parseFunctionType
-  let operation := Operation.stable opName opInputValues opInputFuncs opInputAttrs opOutputs functiontype
-  return operation
+  let st₀ ← get
+  if st₀.is "stablehlo.constant" then
+    let _ ← parseOpName
+    let constant ← parseConstant
+    let operation := Operation.constant opOutputs constant
+    return operation
+  else
+    let opName ← parseOpName
+    let opInputValues ← parseOpInputValues
+    let mut opInputFuncs := []
+    let st₁ ← get
+    if st₁.is "(" then opInputFuncs ← parseOpInputFuncs
+    let mut opInputAttrs := []
+    let st₂ ← get
+    if st₂.is "{" then opInputAttrs ← parseOpInputAttrs
+    parseItem ":"
+    let functiontype ← parseFunctionType
+    let operation := Operation.stable opName opInputValues opInputFuncs opInputAttrs opOutputs functiontype
+    return operation
 
 partial def parseOperation : PState Operation := do
   let st ← get

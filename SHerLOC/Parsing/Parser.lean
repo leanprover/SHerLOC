@@ -32,23 +32,27 @@ abbrev PState (T : Type) := StateT ParsingState (Except String) T
 def ParsingState.is (st : ParsingState) (keyword : String) : Bool := Id.run do
   let mut index := st.index
   for i in [st.index:st.stop] do
-    let c := st.source[i]!
-    if c = ' ' || c = '\t' || c = '\n' then index := index + 1
-    else break
+    if let some c := st.source[i]? then
+      if c = ' ' || c = '\t' || c = '\n' then index := index + 1
+      else break
+    else return false
   let mut valid := true
   for i in [:keyword.length] do
-    let c := st.source[index + i]!
-    if c != keyword.get! ⟨ i ⟩ then valid := false
+    if let some c := st.source[index + i]? then
+      if c != keyword.get! ⟨ i ⟩ then valid := false
+    else return false
   return valid
 
 def ParsingState.isDigit (st : ParsingState) : Bool :=
-  st.source[st.index]!.isDigit
+  if let some c := st.source[st.index]? then
+    c.isDigit
+  else false
 
 def ParsingState.error (st : ParsingState) (msg : String) : String := Id.run do
   let mut token := ""
   let mut started := false
   for i in [st.index:st.stop] do
-    let c := st.source[i]!
+    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in ParsingState.error"
     if ! started then
       if c = ' ' || c = '\t' || c = '\n' then ()
       else started := true
@@ -67,7 +71,7 @@ def skip : PState Unit := do
   let mut lines := 0
   let mut column := st.columnNumber
   for i in [st.index:st.stop] do
-    let c := st.source[i]!
+    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in skip"
     if c = '\n' then
       count := count + 1
       lines := lines + 1
@@ -90,7 +94,7 @@ def parseItem (keyword : String) : PState Unit := do
   let st ← get
   let mut success := true
   for i in [:keyword.length] do
-    let c := st.source[st.index + i]!
+    let c := if let some c := st.source[st.index + i]? then c else panic s!"Indexing error in parseItem"
     if ! c = keyword.get! ⟨ i ⟩ then
       success := false
       break
@@ -107,7 +111,7 @@ def parseId : PState String := do
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    let c := st.source[i]!
+    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in parseId"
     if c.isAlphanum || c = '_' || c = '.' then token := token.push c
     else break
   if token.length != 0 then
@@ -124,7 +128,7 @@ def parseDecimal : PState Nat := do
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    let c := st.source[i]!
+    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in parseDecimal"
     if c.isDigit then token := token.push c
     else break
   if token.length != 0 then
@@ -143,7 +147,7 @@ def parseString : PState String := do
   let mut token := ""
   let mut escaped := false
   for i in [st.index:st.stop] do
-    let c := st.source[i]!
+    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in parseString"
     if c = '"' then
       if escaped then
         token := token.push c
