@@ -28,7 +28,6 @@ def parseFuncOutputs : PState (List ValueType) := do
   parseList "(" ")" (some ",") parseFuncOutput
 
 def parseFunction : PState Function := do
-  let stStart ← get
   parseItem "func.func"
   parseItem "public"
   parseItem "@"
@@ -39,7 +38,6 @@ def parseFunction : PState Function := do
   let funcOutputs ← parseFuncOutputs
   let body ← parseOperations
   let func := { funcId := funcId , funcInputs := funcInputs , funcOutputs := funcOutputs , funcBody := body }
-  record stStart "Function"
   return func
 
 def parseFunctions : PState (List Function) := do

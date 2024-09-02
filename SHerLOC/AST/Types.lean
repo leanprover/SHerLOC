@@ -3,6 +3,7 @@ Copyright (c) 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jean-Baptiste Tristan
 -/
+import SHerLOC.AST.Numbers
 
 /-!
 # Types
@@ -10,38 +11,6 @@ Authors: Jean-Baptiste Tristan
 -/
 
 namespace StableHLO
-
-inductive Signedness where
-  | signed
-  | unsigned
-  deriving Repr, Inhabited, Nonempty
-
-inductive IntegerSize where
-  | b2
-  | b4
-  | b8
-  | b16
-  | b32
-  | b64
-  deriving Repr, Inhabited, Nonempty
-
-structure IntegerType where
-  sign : Signedness
-  size : IntegerSize
-  deriving Repr, Inhabited, Nonempty
-
-inductive FloatType where
-  | f8E4M3FN
-  | f8E5M2
-  | f8E4M3FNUZ
-  | f8E5M2FNUZ
-  | f8E4M3B11FNUZ
-  | bf16
-  | f16
-  | f32
-  | f64
-  | tf32
-  deriving Repr, Inhabited, Nonempty
 
 inductive ComplexType where
   | f32
@@ -55,35 +24,47 @@ inductive TensorElementType where
   | complexType (t: ComplexType)
   deriving Repr, Inhabited, Nonempty
 
-inductive QuantizedTensorElementType where
-  | quant : Signedness → IntegerSize → Int → Int → FloatType → Int → List (Float × Int) → QuantizedTensorElementType
+structure QuantizationParameter where
+  quantizationScale : FloatConstant
+  quantizationZeroPoint: IntegerConstant
+  deriving Repr, Inhabited, Nonempty
+
+structure QuantizedTensorElementType where
+  quantizationStorageType : IntegerType
+  quantizationStorageMinMax : Option (IntegerConstant × IntegerConstant)
+  quantizationExpressedType : FloatType
+  quantizationDimension : Option IntegerConstant
+  quantizationParameters : List QuantizationParameter
+  deriving Repr, Inhabited, Nonempty
+
+-- Here I deviate from the spec because it allows me to keep
+-- the grammer LL(1)
+inductive TensorElementTypeGen where
+  | classic (t : TensorElementType)
+  | quantized (t : QuantizedTensorElementType)
   deriving Repr, Inhabited, Nonempty
 
 structure TensorType where
   shape : List Nat
-  tensorElementType : TensorElementType
+  tensorElementTypeGen : TensorElementTypeGen
   deriving Repr, Inhabited, Nonempty
 
 inductive ValueType where
   | tensorType (tensor : TensorType)
-  | quantizedTensorType (shape : List Int) (typ : QuantizedTensorElementType)
   | tokenType
   | tupleType (elements : List ValueType)
   deriving Repr, Inhabited, Nonempty
 
-inductive StringType where
-  deriving Repr
-
 structure FunctionType where
-  domain : List ValueType
-  range : List ValueType
+  --domain : List ValueType
+  range : ValueType
   deriving Repr, Inhabited, Nonempty
 
 inductive NonValueType where
   | tensorElementType (t : TensorElementType)
   | quantizedTensorElementType (t: QuantizedTensorElementType)
   | functionType (t : FunctionType)
-  | stringType (t : StringType)
+  | stringType
   deriving Repr, Inhabited, Nonempty
 
 inductive SType where
