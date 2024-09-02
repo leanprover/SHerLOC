@@ -1,6 +1,6 @@
-module @jit_plus20 attributes {jax.uses_shape_polymorphism = false, mhlo.num_partitions = 1 : i32, mhlo.num_replicas = 1 : i32} {
-  func.func public @main() -> (tensor<4xf32> {jax.result_info = "", mhlo.layout_mode = "default"}) {
-    %cst = stablehlo.constant dense<0.000000e+00> : tensor<4xf32>
-    return %cst : tensor<4xf32>
+module @jit_f attributes {jax.uses_shape_polymorphism = false, mhlo.num_partitions = 1 : i32, mhlo.num_replicas = 1 : i32} {
+  func.func public @main() -> (tensor<i32> {jax.result_info = "", mhlo.layout_mode = "default"}) {
+    %c = stablehlo.constant dense<0> : tensor<i32>
+    return %c : tensor<i32>
   }
 }
