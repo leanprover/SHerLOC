@@ -19,10 +19,7 @@ def parseModule : PState Program := do
   let funcs ← parseFunctions
   return funcs
 
-def parse (src : List Char) : Program := Id.run do
-  let r ← parseModule.run' <| ParsingState.mk src 0 src.length 1 1
-  match r with
-  | .ok p => p
-  | .error e => panic e
+def parse (src : List Char) : Except String Program := do
+  parseModule.run' <| ParsingState.mk src 0 src.length 1 1
 
 end StableHLO

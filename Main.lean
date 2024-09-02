@@ -5,13 +5,24 @@ Authors: Jean-Baptiste Tristan
 -/
 import SHerLOC
 
-open List System IO FS FilePath
+open System IO FilePath Process FS Std
 
-def main (args : List String) : IO Unit := do
-  if args.length != 1 then
-    IO.println "Expected 1 argument"
-    IO.Process.exit 1
-  let file : FilePath := args[0]!
-  let content ← readFile file
-  let content := StableHLO.parse content.data
-  IO.println s!"{repr content}"
+def main : IO Unit := do
+  let o ← output { cmd := "ls", args := #["Tests"] }
+  let files := o.stdout.splitOn "\n"
+  let files := files.filter fun s => s.takeRight 5 = ".mlir"
+  let mut success : Bool := true
+  let mut count : Nat := 0
+  for file in files do
+    IO.println s!"Reading {file}"
+    let fp : FilePath := System.mkFilePath ["Tests", file]
+    let content ← readFile fp
+    let content := StableHLO.parse content.data
+    match content with
+    | .ok _ =>
+      IO.println s!"Parsing {file}: success"
+    | .error e =>
+      IO.println s!"Parsing {file}: failure {e}"
+      count := count + 1
+      success := false
+  if ! success then panic s!"{count} out of {files.length} tests failed"
