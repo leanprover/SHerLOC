@@ -132,7 +132,8 @@ def parseOpOutputs : PState (List ValueId) := do
   parseListAux "=" (some ",") parseValueId
 
 def parseOpInputValues : PState (List ValueId) := do
-  parseList "(" ")" (some ",") parseValueId
+  parseListAux ":" (some ",") parseValueId
+  --parseList "(" ")" (some ",") parseValueId
 
 def parseInputFuncInput : PState FuncInput := do
   let id ← parseValueId
@@ -147,7 +148,7 @@ def parseOpInputAttrs : PState (List Attribute) := do
   parseAttributes
 
 def parseReturn : PState Operation := do
-  parseItem "stablehlo.return"
+  parseItem "return"
   let arguments ← parseOpInputValues
   parseItem ":"
   let functiontype ← parseFunctionType
@@ -189,7 +190,7 @@ partial def parseStableOp : PState Operation := do
 
 partial def parseOperation : PState Operation := do
   let st ← get
-  if st.is "stablehlo.return" then parseReturn
+  if st.is "return" then parseReturn
   else parseStableOp
 
 partial def parseInputFuncBody : PState (List Operation) :=

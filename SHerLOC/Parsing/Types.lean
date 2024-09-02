@@ -145,16 +145,17 @@ end
 def parseValueTypes : PState (List ValueType) := do
   parseList "(" ")" (some ",") parseValueType
 
+-- Temporary: should allow for parenthesis
+def parseValueTypesOutput : PState ValueType := do
+  parseValueType
+
 def parseStringType : PState NonValueType := do
   parseItem "string"
   return NonValueType.stringType
 
 def parseFunctionType : PState FunctionType := do
-  let inputTypes ← parseValueTypes
-  parseItem "-"
-  parseItem ">"
-  let outputType ← parseValueTypes
-  let functionType := { domain := inputTypes , range := outputType }
+  let outputType ← parseValueTypesOutput
+  let functionType := { range := outputType }
   return functionType
 
 end StableHLO

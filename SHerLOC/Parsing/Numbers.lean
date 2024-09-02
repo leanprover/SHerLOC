@@ -10,12 +10,12 @@ namespace StableHLO
 
 def tryParseIntegerType : PState (Option IntegerType) := do
   let st ← get
-  if st.is "si2" then parseItem "si2" ; return some { sign := Signedness.signed , size := IntegerSize.b2 }
-  if st.is "si4" then parseItem "si4" ; return some { sign := Signedness.signed , size := IntegerSize.b4 }
-  if st.is "si8" then parseItem "si8" ; return some { sign := Signedness.signed , size := IntegerSize.b8 }
-  if st.is "si16" then parseItem "si16" ; return some { sign := Signedness.signed , size := IntegerSize.b16 }
-  if st.is "si32" then parseItem "si32" ; return some { sign := Signedness.signed , size := IntegerSize.b32 }
-  if st.is "si64" then parseItem "si64" ; return some { sign := Signedness.signed , size := IntegerSize.b64 }
+  if st.is "i2" then parseItem "i2" ; return some { sign := Signedness.signed , size := IntegerSize.b2 }
+  if st.is "i4" then parseItem "i4" ; return some { sign := Signedness.signed , size := IntegerSize.b4 }
+  if st.is "i8" then parseItem "i8" ; return some { sign := Signedness.signed , size := IntegerSize.b8 }
+  if st.is "i16" then parseItem "i16" ; return some { sign := Signedness.signed , size := IntegerSize.b16 }
+  if st.is "i32" then parseItem "i32" ; return some { sign := Signedness.signed , size := IntegerSize.b32 }
+  if st.is "i64" then parseItem "i64" ; return some { sign := Signedness.signed , size := IntegerSize.b64 }
   if st.is "ui2" then parseItem "ui2" ; return some { sign := Signedness.unsigned , size := IntegerSize.b2 }
   if st.is "ui4" then parseItem "ui4" ; return some { sign := Signedness.unsigned , size := IntegerSize.b4 }
   if st.is "ui8" then parseItem "ui8" ; return some { sign := Signedness.unsigned , size := IntegerSize.b8 }

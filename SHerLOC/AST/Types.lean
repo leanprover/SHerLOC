@@ -56,8 +56,8 @@ inductive ValueType where
   deriving Repr, Inhabited, Nonempty
 
 structure FunctionType where
-  domain : List ValueType
-  range : List ValueType
+  --domain : List ValueType
+  range : ValueType
   deriving Repr, Inhabited, Nonempty
 
 inductive NonValueType where
