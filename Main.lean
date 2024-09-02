@@ -25,4 +25,4 @@ def main : IO Unit := do
       IO.println s!"Parsing {file}: failure {e}"
       count := count + 1
       success := false
-  if ! success then panic s!"{count} out of {files.length} tests failed"
+  if ! success then panic! s!"{count} out of {files.length} tests failed"
