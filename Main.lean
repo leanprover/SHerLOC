@@ -7,7 +7,7 @@ import SHerLOC
 
 open System IO FilePath Process FS Std
 
-def main (args : List String) : IO Unit := do
+def main (args : List String) : IO UInt32 := do
   if args.length = 0 then
     let o ← output { cmd := "ls", args := #["Tests"] }
     let files := o.stdout.splitOn "\n"
@@ -29,7 +29,10 @@ def main (args : List String) : IO Unit := do
     IO.println "\nFailed:\n"
     for file in failed do
       IO.println file
-    if failed.length > 0 then panic! s!"Some tests failed"
+    if failed.length > 0 then
+      return 1
+    else
+      return 0
   else if args.length = 1 then
     if let some _ := args[0]!.toNat? then
       let file : String := "test" ++ args[0]! ++ ".mlir"
@@ -37,9 +40,12 @@ def main (args : List String) : IO Unit := do
       let content ← readFile fp
       let content := StableHLO.parse content.data
       match content with
-      | .ok p => IO.println s!"{repr p}"
+      | .ok p =>
+        IO.println s!"{repr p}"
+        return 0
       | .error e =>
         IO.println s!"{e.2}"
         IO.println s!"{e.1}"
+        return 1
     else panic! s!"Unexpected argument {args[0]!}, expected natural number"
   else panic! s!"Unexpected number of arguments: {args.length}"
