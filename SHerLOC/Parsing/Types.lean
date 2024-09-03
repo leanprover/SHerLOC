@@ -142,20 +142,27 @@ partial def parseValueType : PState ValueType := do
 
 end
 
-def parseValueTypes : PState (List ValueType) := do
-  parseList "(" ")" (some ",") parseValueType
-
 -- Temporary: should allow for parenthesis
 def parseValueTypesOutput : PState ValueType := do
   parseValueType
 
+-- Temporary: more than one return type?
+def parseFunctionTypeShort : PState FunctionType := do
+  let outputType ← parseValueTypesOutput
+  return FunctionType.short [outputType]
+
+def parseValueTypes : PState (List ValueType) := do
+  parseList "(" ")" (some ",") parseValueType
+
+def parseFunctionTypeLong : PState FunctionType := do
+  let inputTypes ← parseValueTypes
+  parseItem "-"
+  parseItem ">"
+  let outputType ← parseValueTypesOutput
+  return FunctionType.long inputTypes [outputType]
+
 def parseStringType : PState NonValueType := do
   parseItem "string"
   return NonValueType.stringType
-
-def parseFunctionType : PState FunctionType := do
-  let outputType ← parseValueTypesOutput
-  let functionType := { range := outputType }
-  return functionType
 
 end StableHLO

@@ -58,7 +58,7 @@ def ParsingState.error (st : ParsingState) (msg : String) : String := Id.run do
       else started := true
     else if c = ' ' || c = '\t' || c = '\n' then break
     else token := token.push c
-  s!"Parsing error line {st.lineNumber}, column {st.columnNumber} : expected {msg}, found {token}"
+  s!"Parsing error line {st.lineNumber}, column {st.columnNumber} : expected {msg} but found {token}"
 
 -- def record (st : ParsingState) (nonTerminal : String) : PState Unit := do
 --   let st' ← get

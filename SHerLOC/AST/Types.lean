@@ -55,9 +55,9 @@ inductive ValueType where
   | tupleType (elements : List ValueType)
   deriving Repr, Inhabited, Nonempty
 
-structure FunctionType where
-  --domain : List ValueType
-  range : ValueType
+inductive FunctionType where
+  | short (range : List ValueType)
+  | long (domain range : List ValueType)
   deriving Repr, Inhabited, Nonempty
 
 inductive NonValueType where

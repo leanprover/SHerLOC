@@ -151,7 +151,7 @@ def parseReturn : PState Operation := do
   parseItem "return"
   let arguments ← parseOpInputValues
   parseItem ":"
-  let functiontype ← parseFunctionType
+  let functiontype ← parseFunctionTypeShort
   let parseResult := Operation.return arguments functiontype
   return parseResult
 
@@ -191,9 +191,17 @@ partial def parseStableOp : PState Operation := do
     let st₂ ← get
     if st₂.is "{" then opInputAttrs ← parseOpInputAttrs
     parseItem ":"
-    let functiontype ← parseFunctionType
-    let operation := Operation.stable opName opInputValues opInputFuncs opInputAttrs opOutputs functiontype
-    return operation
+    -- Unfortunately, StableHLO seems to use both short and long notations for operation types
+    -- However, it appears that parenthesis only appear for domains
+    let st₃ ← get
+    if st₃.is "(" then
+      let functiontype ← parseFunctionTypeLong
+      let operation := Operation.stable opName opInputValues opInputFuncs opInputAttrs opOutputs functiontype
+      return operation
+    else
+      let functiontype ← parseFunctionTypeShort
+      let operation := Operation.stable opName opInputValues opInputFuncs opInputAttrs opOutputs functiontype
+      return operation
 
 partial def parseOperation : PState Operation := do
   let st ← get

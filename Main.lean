@@ -12,21 +12,24 @@ def main (args : List String) : IO Unit := do
     let o ← output { cmd := "ls", args := #["Tests"] }
     let files := o.stdout.splitOn "\n"
     let files := files.filter fun s => s.takeRight 5 = ".mlir"
-    let mut success : Bool := true
-    let mut count : Nat := 0
+    let mut passed := []
+    let mut failed := []
     for file in files do
-      IO.println s!"Reading {file}"
       let fp : FilePath := System.mkFilePath ["Tests", file]
       let content ← readFile fp
       let content := StableHLO.parse content.data
       match content with
       | .ok _ =>
-        IO.println s!"Parsing {file}: success"
-      | .error e =>
-        IO.println s!"Parsing {file}: failure {e}"
-        count := count + 1
-        success := false
-    if ! success then panic! s!"{count} out of {files.length} tests failed"
+        passed := file :: passed
+      | .error _ =>
+        failed := file :: failed
+    IO.println "\nPassed:\n"
+    for file in passed do
+      IO.println file
+    IO.println "\nFailed:\n"
+    for file in failed do
+      IO.println file
+    if failed.length > 0 then panic! s!"Some tests failed"
   else if args.length = 1 then
     if let some _ := args[0]!.toNat? then
       let file : String := "test" ++ args[0]! ++ ".mlir"
