@@ -130,6 +130,7 @@ inductive OpName where
 structure FuncInput where
   id : FuncId
   typ : ValueType
+  attrs : List Attribute
   deriving Repr, Inhabited, Nonempty
 
 mutual

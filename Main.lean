@@ -38,6 +38,8 @@ def main (args : List String) : IO Unit := do
       let content := StableHLO.parse content.data
       match content with
       | .ok p => IO.println s!"{repr p}"
-      | .error e => IO.println s!"{e}"
+      | .error e =>
+        IO.println s!"{e.2}"
+        IO.println s!"{e.1}"
     else panic! s!"Unexpected argument {args[0]!}, expected natural number"
   else panic! s!"Unexpected number of arguments: {args.length}"
