@@ -29,6 +29,7 @@ def main (args : List String) : IO UInt32 := do
     IO.println "\nFailed:\n"
     for file in failed do
       IO.println file
+    IO.println ""
     if failed.length > 0 then
       return 1
     else
@@ -44,7 +45,8 @@ def main (args : List String) : IO UInt32 := do
         IO.println s!"{repr p}"
         return 0
       | .error e =>
-        IO.println s!"{e.2}"
+        IO.println s!"{e.2.2}"
+        IO.println s!"{e.2.1}"
         IO.println s!"{e.1}"
         return 1
     else panic! s!"Unexpected argument {args[0]!}, expected natural number"

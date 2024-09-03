@@ -19,6 +19,19 @@ instance : ToString Trace where
 instance : ToString (List Trace) where
   toString := fun t : List Trace => t.foldl (fun s : String => fun t : Trace => s ++ s!"{t}\n") "\n"
 
+structure Derivation where
+  startLine : Nat
+  startColumn : Nat
+  endLine : Nat
+  endColumn : Nat
+  parser : String
+  deriving Repr, Inhabited, Nonempty
+
+instance : ToString Derivation where
+  toString := fun t : Derivation => s!"({t.startLine},{t.startColumn}):({t.endLine},{t.endColumn}):{t.parser}"
+
+instance : ToString (List Derivation) where
+  toString := fun t : List Derivation => t.foldl (fun s : String => fun t : Derivation => s ++ s!"{t}\n") "\n"
 
 structure ParsingState where
   source : List Char     -- Source data being parsed
@@ -26,10 +39,11 @@ structure ParsingState where
   stop : Nat
   lineNumber : Nat
   columnNumber : Nat
-  trace : List Trace        -- For debugging the parser
+  trace : List Trace            -- For debugging the parser
+  derivations : List Derivation -- For debugging the parser
   deriving Repr, Inhabited, Nonempty
 
-abbrev PState (T : Type) := StateT ParsingState (Except (String × List Trace)) T
+abbrev PState (T : Type) := StateT ParsingState (Except (String × List Trace × List Derivation)) T
 
 def ParsingState.is (st : ParsingState) (keyword : String) : Bool := Id.run do
   let mut index := st.index
@@ -50,7 +64,7 @@ def ParsingState.isDigit (st : ParsingState) : Bool :=
     c.isDigit
   else false
 
-def ParsingState.error (st : ParsingState) (msg : String) : String × (List Trace) := Id.run do
+def ParsingState.error (st : ParsingState) (msg : String) : String × (List Trace) × (List Derivation) := Id.run do
   let mut token := ""
   let mut started := false
   for i in [st.index:st.stop] do
@@ -63,7 +77,7 @@ def ParsingState.error (st : ParsingState) (msg : String) : String × (List Trac
     else if c = ' ' || c = '\t' || c = '\n' then break
     else token := token.push c
   let errorMsg := s!"Parsing error line {st.lineNumber}, column {st.columnNumber} : expected {msg} but found {token}"
-  return (errorMsg, st.trace)
+  return (errorMsg, st.trace, st.derivations)
 
 def skip : PState Unit := do
   let st ← get
@@ -177,7 +191,8 @@ def pop (parser : String) : PState Unit := do
   if let some tail := st.trace.tail? then
     let head := st.trace.head!
     if head.parser = parser then
-      set {st with trace := tail }
+      let derivation : Derivation := { startLine := head.startLine, startColumn := head.startColumn, endLine := st.lineNumber, endColumn := st.columnNumber, parser := parser }
+      set {st with trace := tail, derivations := derivation :: st.derivations }
     else panic! s!"Trace mismatch: expected {parser} but found {head}"
   else panic! "More pops than pushes, some parser is missing its push"
 
