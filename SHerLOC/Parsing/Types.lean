@@ -188,19 +188,17 @@ partial def parseValueType : PState ValueType := do
 
 end
 
--- Temporary: should allow for parenthesis
-def parseValueTypesOutput : PState ValueType := do
+def parseValueTypesOutput : PState (List ValueType) := do
   push "parseValueTypesOutput"
-  let r ← parseValueType
+  let r ← parseListOneorMore "," parseValueType
   pop "parseValueTypesOutput"
   return r
 
--- Temporary: more than one return type?
 def parseFunctionTypeShort : PState FunctionType := do
   push "parseFunctionTypeShort"
   let outputType ← parseValueTypesOutput
   pop "parseFunctionTypeShort"
-  return FunctionType.short [outputType]
+  return FunctionType.short outputType
 
 def parseValueTypes : PState (List ValueType) := do
   push "parseValueTypes"
@@ -215,7 +213,7 @@ def parseFunctionTypeLong : PState FunctionType := do
   parseItem ">"
   let outputType ← parseValueTypesOutput
   pop "parseFunctionTypeLong"
-  return FunctionType.long inputTypes [outputType]
+  return FunctionType.long inputTypes outputType
 
 def parseStringType : PState NonValueType := do
   push "parseStringType"

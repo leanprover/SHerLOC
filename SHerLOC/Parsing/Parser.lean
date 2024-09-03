@@ -28,7 +28,7 @@ structure Derivation where
   deriving Repr, Inhabited, Nonempty
 
 instance : ToString Derivation where
-  toString := fun t : Derivation => s!"({t.startLine},{t.startColumn}):({t.endLine},{t.endColumn}):{t.parser}"
+  toString := fun t : Derivation => s!"{t.parser}        ({t.startLine},{t.startColumn}):({t.endLine},{t.endColumn})"
 
 instance : ToString (List Derivation) where
   toString := fun t : List Derivation => t.foldl (fun s : String => fun t : Derivation => s ++ s!"{t}\n") "\n"
@@ -186,15 +186,40 @@ def push (parser : String) : PState Unit := do
   let traceItem : Trace := { startLine := st.lineNumber, startColumn := st.columnNumber, parser }
   set { st with trace := traceItem :: st.trace   }
 
+def indent (n : Nat) : String := Id.run do
+  let mut token := ""
+  for _ in [:n] do
+    token := token.push ' '
+  return token
+
 def pop (parser : String) : PState Unit := do
   let st ← get
   if let some tail := st.trace.tail? then
     let head := st.trace.head!
     if head.parser = parser then
-      let derivation : Derivation := { startLine := head.startLine, startColumn := head.startColumn, endLine := st.lineNumber, endColumn := st.columnNumber, parser := parser }
+      let derivation : Derivation := {
+        startLine := head.startLine,
+        startColumn := head.startColumn,
+        endLine := st.lineNumber,
+        endColumn := st.columnNumber,
+        parser := (indent tail.length) ++ parser }
       set {st with trace := tail, derivations := derivation :: st.derivations }
     else panic! s!"Trace mismatch: expected {parser} but found {head}"
   else panic! "More pops than pushes, some parser is missing its push"
+
+partial def parseListOneorMoreAux (separator : String) (parse : PState T) : PState (List T) := do
+  let st ← get
+  if st.is separator then
+    parseItem separator
+    let head ← parse
+    let tail ← parseListOneorMoreAux separator parse
+    return head :: tail
+  else return []
+
+partial def parseListOneorMore (separator : String) (parse : PState T) : PState (List T) := do
+  let head ← parse
+  let tail ← parseListOneorMoreAux separator parse
+  return head :: tail
 
 partial def parseListAux (closingMark : String) (separator : Option String) (parse : PState T) : PState (List T) := do
   let st ← get
