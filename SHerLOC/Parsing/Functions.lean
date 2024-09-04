@@ -10,20 +10,6 @@ import SHerLOC.Parsing.Intermediate
 
 namespace StableHLO
 
-def parseFuncInput : PState FuncInput := do
-  push "parseFuncInput"
-  let id ← parseValueId
-  parseItem ":"
-  let typ ← parseValueType
-  pop "parseFuncInput"
-  return { id := id , typ := typ }
-
-def parseFuncInputs : PState (List FuncInput) := do
-  push "parseFuncInputs"
-  let r ← parseList "(" ")" (some ",") parseFuncInput
-  pop "parseFuncInputs"
-  return r
-
 def tryParseDEntryFunctionType : PState (Option FunctionType) := do
   tryParseDictionaryEntry "function_type" parseFunctionType
 
@@ -83,8 +69,7 @@ def parseFunctionDictionaryAttributes : PState (String × FunctionType × (List 
 
 def parseFunction : PState Function := do
   push "parseFunction"
-  parseItem "\"func.func\""
-  parseItem "()"
+  parseItems ["\"func.func\"", "(", ")"]
   parseItem "<{"
   let (name,typ,argAttrs,resAttrs) ← parseFunctionDictionaryAttributes
   parseItem "}>"
@@ -98,8 +83,7 @@ def parseFunction : PState Function := do
   let operations ← parseListAux "}" none parseOperation
   let body : InputFunc := InputFunc.mk funcInputs operations
   parseItem "})"
-  parseItem ":"
-  discard <| parseFunctionType -- could be more precise () -> ()
+  parseItems [":","(",")","->","(",")"]
   let r : Function := { funcId := name , funcArgAttrs := argAttrs , funcResAttrs := resAttrs , funcType := typ, funcBody := body }
   pop "parseFunction"
   return r

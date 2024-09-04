@@ -120,6 +120,10 @@ def parseItem (keyword : String) : PState Unit := do
   else
     throw <| st.error keyword
 
+def parseItems (keywords : List String) : PState Unit := do
+  for i in [:keywords.length] do
+    parseItem <| keywords.get! i
+
 def parseId : PState String := do
   skip
   let st ← get

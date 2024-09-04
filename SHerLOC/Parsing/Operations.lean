@@ -17,12 +17,6 @@ def parseOpOutputs : PState (List ValueId) := do
   pop "parseOpOutputs"
   return r
 
-def parseOpInputValues : PState (List ValueId) := do
-  push "parseOpInputValues"
-  let r ← parseListAux ":" (some ",") parseValueId
-  pop "parseOpInputValues"
-  return r
-
 def parseInputFuncInput : PState FuncInput := do
   push "parseInputFuncInput"
   let id ← parseValueId
@@ -35,12 +29,6 @@ def parseInputFuncInputs : PState (List FuncInput) := do
   push "parseInputFuncInputs"
   let r ← parseList "(" ")" (some ",") parseInputFuncInput
   pop "parseInputFuncInputs"
-  return r
-
-def parseOpInputAttrs : PState (List Attribute) := do
-  push "parseOpInputAttrs"
-  let r ← parseAttributes
-  pop "parseOpInputAttrs"
   return r
 
 def parseReturn : PState Operation := do
@@ -133,11 +121,5 @@ partial def parseInputFuncBody : PState (List Operation) := do
   return r
 
 end
-
-def parseOperations : PState (List Operation) := do
-  push "parseOperations"
-  let r ← parseList "{" "}" none parseOperation
-  pop "parseOperations"
-  return r
 
 end StableHLO

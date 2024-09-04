@@ -37,8 +37,6 @@ structure QuantizedTensorElementType where
   quantizationParameters : List QuantizationParameter
   deriving Repr, Inhabited, Nonempty
 
--- Here I deviate from the spec because it allows me to keep
--- the grammer LL(1)
 inductive TensorElementTypeGen where
   | classic (t : TensorElementType)
   | quantized (t : QuantizedTensorElementType)
