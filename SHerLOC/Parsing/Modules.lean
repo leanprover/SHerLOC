@@ -14,15 +14,21 @@ namespace StableHLO
 def parseModule : PState Module := do
   push "parseModule"
   parseItems ["\"builtin.module\"", "(", ")"]
-  parseItem "<{"
-  parseItem "sym_name"
-  parseItem "="
-  let name ← parseString
-  parseItem "}>"
+  let mut name : Option FuncId := none
+  let st ← get
+  if st.is "<{" then
+    parseItem "<{"
+    parseItem "sym_name"
+    parseItem "="
+    name ← parseString
+    parseItem "}>"
   parseItem "("
   let region ← parseFunctions
   parseItem ")"
-  let attributes ← parseAttributes
+  let mut attributes : List Attribute := []
+  let st ← get
+  if st.is "{" then
+    attributes ← parseAttributes
   parseItems [":","(",")","->","(",")"]
   let r : Module := { modId := name, modAttrs := attributes, modFuncs := region }
   pop "parseModule"

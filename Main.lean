@@ -35,19 +35,18 @@ def main (args : List String) : IO UInt32 := do
     else
       return 0
   else if args.length = 1 then
-    if let some _ := args[0]!.toNat? then
-      let file : String := "test" ++ args[0]! ++ ".mlir"
-      let fp : FilePath := System.mkFilePath ["Tests", file]
-      let content ← readFile fp
-      let content := StableHLO.parse content.data
-      match content with
-      | .ok p =>
-        IO.println s!"{repr p}"
-        return 0
-      | .error e =>
-        IO.println s!"{e.2.2}"
-        IO.println s!"{e.2.1}"
-        IO.println s!"{e.1}"
-        return 1
-    else panic! s!"Unexpected argument {args[0]!}, expected natural number"
+    let file := args[0]!
+    let fp : FilePath := System.mkFilePath ["Tests", file]
+    let content ← readFile fp
+    let content := StableHLO.parse content.data
+    match content with
+    | .ok p =>
+      IO.println s!"{repr p}"
+      return 0
+    | .error e =>
+      IO.println s!"{e.2.2}"
+      IO.println s!"{e.2.1}"
+      IO.println s!"{e.1}"
+      return 1
+
   else panic! s!"Unexpected number of arguments: {args.length}"

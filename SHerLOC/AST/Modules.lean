@@ -13,7 +13,7 @@ import SHerLOC.AST.Functions
 namespace StableHLO
 
 structure Module where
-  modId : FuncId
+  modId : Option FuncId
   modAttrs : List Attribute
   modFuncs : List Function
   deriving Repr, Inhabited, Nonempty
