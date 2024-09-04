@@ -11,12 +11,6 @@ import SHerLOC.Parsing.Intermediate
 
 namespace StableHLO
 
-def parseAttributes : PState (List Attribute) := do
-  push "parseAttributes"
-  let r ← parseList "{" "}" (some ",") parseAttribute
-  pop "parseAttributes"
-  return r
-
 def parseOpOutputs : PState (List ValueId) := do
   push "parseOpOutputs"
   let r ← parseListAux "=" (some ",") parseValueId
@@ -35,7 +29,7 @@ def parseInputFuncInput : PState FuncInput := do
   parseItem ":"
   let typ ← parseValueType
   pop "parseInputFuncInput"
-  return { id := id , typ := typ, attrs := [] }
+  return { id := id , typ := typ }
 
 def parseInputFuncInputs : PState (List FuncInput) := do
   push "parseInputFuncInputs"
@@ -52,69 +46,46 @@ def parseOpInputAttrs : PState (List Attribute) := do
 def parseReturn : PState Operation := do
   push "parseReturn"
   parseItem "\"func.return\""
-  let arguments ← parseOpInputValues
+  let arguments ← parseValueUseList
   parseItem ":"
   let functiontype ← parseFunctionType
   let parseResult := Operation.return arguments functiontype
   pop "parseReturn"
   return parseResult
 
+def parseCall (outputs : List ValueId) : PState Operation := do
+  push "parseCall"
+  parseItem "\"func.call\""
+  let arguments ← parseValueUseList
+  parseItem "<{"
+  parseItem "callee"
+  parseItem "="
+  let callee ← parseFuncId
+  parseItem "}>"
+  parseItem ":"
+  let typ ← parseFunctionType
+  let r := Operation.call callee arguments outputs typ
+  pop "parseCall"
+  return r
+
 mutual
 
 partial def parseInputFunc : PState InputFunc := do
   push "parseInputFunc"
   parseItem "{"
-  let id ← parseUnusedId
+  discard <| parseUnusedId
   let funcInputs ← parseInputFuncInputs
   parseItem ":"
   let body ← parseInputFuncBody
   parseItem "}"
   pop "parseInputFunc"
-  return InputFunc.mk id funcInputs body
+  return InputFunc.mk funcInputs body
 
 partial def parseOpInputFuncs : PState (List InputFunc) := do
   push "parseOpInputFuncs"
   let r ← parseList "(" ")" (some ",") parseInputFunc
   pop "parseOpInputFuncs"
   return r
-
--- partial def parseStableOp : PState Operation := do
---   push "parseStableOp"
---   let st ← get
---   let mut opOutputs := []
---   if st.is "%" then
---     opOutputs ← parseOpOutputs
---     parseItem "="
---   let st₀ ← get
---   if st₀.is "stablehlo.constant" then
---     let _ ← parseOpName
---     let constant ← parseConstant
---     let operation := Operation.constant opOutputs constant
---     pop "parseStableOp"
---     return operation
---   else
---     let opName ← parseOpName
---     let opInputValues ← parseOpInputValues
---     let mut opInputFuncs := []
---     let st₁ ← get
---     if st₁.is "(" then opInputFuncs ← parseOpInputFuncs
---     let mut opInputAttrs := []
---     let st₂ ← get
---     if st₂.is "{" then opInputAttrs ← parseOpInputAttrs
---     parseItem ":"
---     -- Unfortunately, StableHLO seems to use both short and long notations for operation types
---     -- However, it appears that parenthesis only appear for domains
---     let st₃ ← get
---     if st₃.is "(" then
---       let functiontype ← parseFunctionType
---       let operation := Operation.stable opName opInputValues opInputFuncs opInputAttrs opOutputs functiontype
---       pop "parseStableOp"
---       return operation
---     else
---       let functiontype ← parseFunctionType
---       let operation := Operation.stable opName opInputValues opInputFuncs opInputAttrs opOutputs functiontype
---       pop "parseStableOp"
---       return operation
 
 partial def parseOperationDictionaryAttributes : PState (List Attribute) := do
   push "parseOperationDictionaryAttributes"
@@ -125,10 +96,19 @@ partial def parseOperationDictionaryAttributes : PState (List Attribute) := do
 partial def parseOperation : PState Operation := do
   push "parseOperation"
   let st ← get
+  if st.is "\"func.return\"" then
+    let r ← parseReturn
+    pop "parseOperation"
+    return r
   let mut opOutputs := []
   if st.is "%" then
     opOutputs ← parseOpOutputs
     parseItem "="
+  let st₀ ← get
+  if st₀.is "\"func.call\"" then
+    let r ← parseCall opOutputs
+    pop "parseOperation"
+    return r
   let opName ← parseString
   --let opInputValues ← parseOpInputValues
   let opInputValues ← parseValueUseList
@@ -136,10 +116,14 @@ partial def parseOperation : PState Operation := do
   let st₂ ← get
   if st₂.is "<{" then
     opInputAttrs ← parseOperationDictionaryAttributes
+  let mut opInputFuncs := []
+  let st₃ ← get
+  if st₃.is "(" then
+    opInputFuncs ← parseOpInputFuncs
   parseItem ":"
   let functiontype ← parseFunctionType
-  let operation := Operation.stable opName opInputValues [] opInputAttrs opOutputs functiontype
-  pop "parseStableOp"
+  let operation := Operation.stablehlo opName opInputValues opInputFuncs opInputAttrs opOutputs functiontype
+  pop "parseOperation"
   return operation
 
 partial def parseInputFuncBody : PState (List Operation) := do

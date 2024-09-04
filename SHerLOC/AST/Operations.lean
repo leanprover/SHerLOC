@@ -130,21 +130,20 @@ inductive OpName where
 structure FuncInput where
   id : FuncId
   typ : ValueType
-  attrs : List Attribute
   deriving Repr, Inhabited, Nonempty
 
 mutual
 
   inductive InputFunc where
     | mk
-      (id : UnusedId)
       (funcInputs : List FuncInput)
       (body : List Operation)
     deriving Repr, Inhabited, Nonempty
 
   inductive Operation where
-    | stable
-      (name : String)(inputValues : List ValueId)
+    | stablehlo
+      (name : String)
+      (inputValues : List ValueId)
       (inputFunctions : List InputFunc)
       (inputAttributes : List Attribute)
       (outputs : List ValueId)
@@ -152,9 +151,11 @@ mutual
     | return
       (operands : List ValueId)
       (signature : FunctionType)
-    | constant
+    | call
+      (callee : FuncId)
+      (inputValues : List ValueId)
       (outputs : List ValueId)
-      (value : Constant)
+      (signature : FunctionType)
     deriving Repr, Inhabited, Nonempty
 
 end

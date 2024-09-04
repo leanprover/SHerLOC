@@ -87,6 +87,28 @@ def parseTensorConstant : PState TensorConstant := do
   pop "parseTensorConstant"
   return { literal := tensorLiteral, type := tensorType }
 
+def parseArrayConstant : PState TensorConstant := do
+  push "parseArrayConstant"
+  parseItem "array"
+  parseItem "<"
+  let typ : TensorElementType ← parseTensorElementType
+  let typ : TensorElementTypeGen := TensorElementTypeGen.classic typ
+  let typ : TensorType := { shape := [], tensorElementTypeGen := typ }
+  let st ← get
+  if st.is ">" then
+    parseItem ">"
+    let literal := DenseLiteral.denseElements []
+    pop "parseArrayConstant"
+    return { literal := literal, type := typ }
+  else if st.is ":" then
+    parseItem ":"
+    let literal ← parseListAux ">" "," parseElementLiteral -- This will surely need to be generalized
+    parseItem ">"
+    let literal := DenseLiteral.denseElements literal
+    pop "parseArrayConstant"
+    return { literal := literal, type := typ }
+  else throw <| st.error "Array constant"
+
 def parseStringLiteral : PState String := do
   push "parseStringLiteral"
   let r ← parseString
@@ -194,6 +216,7 @@ def parseConstant : PState Constant := do
   if st.is "\"" then pop "parseConstant" ; return ← parseStringConstant
   if st.is "(" then pop "parseConstant" ; return Constant.complexConstant <| ← parseComplexConstant
   if st.is "dense" then pop "parseConstant" ; return Constant.tensorConstant <| ← parseTensorConstant
+  if st.is "array" then pop "parseConstant" ; return Constant.tensorConstant <| ← parseArrayConstant
   pop "parseConstant"
   return Constant.numberConsant <| ← parseNumberConstant
 

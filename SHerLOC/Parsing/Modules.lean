@@ -16,10 +16,12 @@ def parseModule : PState Module := do
   parseItem "\"builtin.module\""
   let valueUseList ← parseValueUseList
   let dictionaryProperties ← parseDictionaryProperties
-  let region ← parseRegion parseFunction
+  parseItem "("
+  let region ← parseFunctions
+  parseItem ")"
   let attributes ← parseAttributes
   parseItem ":"
-  let functiontype ← parseFunctionType
+  let functiontype ← parseFunctionType -- could be more specific, () -> ()
   let r : Module := { modId := "", modAttrs := attributes, modFuncs := region }
   pop "parseModule"
   return r

@@ -15,9 +15,8 @@ def parseFuncInput : PState FuncInput := do
   let id ← parseValueId
   parseItem ":"
   let typ ← parseValueType
-  let attrs ←  parseAttributes
   pop "parseFuncInput"
-  return { id := id , typ := typ , attrs := attrs }
+  return { id := id , typ := typ }
 
 def parseFuncInputs : PState (List FuncInput) := do
   push "parseFuncInputs"
@@ -25,27 +24,20 @@ def parseFuncInputs : PState (List FuncInput) := do
   pop "parseFuncInputs"
   return r
 
-def parseFuncOutput : PState FuncOutput := do
-  push "parseFuncOutput"
-  let typ ← parseValueType
-  let attrs ← parseAttributes
-  pop "parseFuncOutput"
-  return { typ := typ , attrs := attrs }
-
-def parseFuncOutputs : PState (List FuncOutput) := do
-  push "parseFuncOutputs"
-  let r ← parseList "(" ")" (some ",") parseFuncOutput
-  pop "parseFuncOutputs"
-  return r
-
 def tryParseDEntryFunctionType : PState (Option FunctionType) := do
   tryParseDictionaryEntry "function_type" parseFunctionType
 
-def parseDictionaryAttributes : PState (List Attribute) := do
-  parseList "[{" "}]" "," parseAttribute
+def parseDictionaryAttributesInner : PState (List Attribute) := do
+  parseList "{" "}" "," parseAttribute
 
-def tryParseDEntryResultAttributes : PState (Option (List Attribute)) := do
-  tryParseDictionaryEntry "res_attrs" parseDictionaryAttributes
+def parseDictionaryAttributesOutter : PState (List (List Attribute)) := do
+  parseList "[" "]" "," parseDictionaryAttributesInner
+
+def tryParseDEntryResultAttributes : PState (Option (List (List Attribute))) := do
+  tryParseDictionaryEntry "res_attrs" parseDictionaryAttributesOutter
+
+def tryParseDEntryArgAttributes : PState (Option (List (List Attribute))) := do
+  tryParseDictionaryEntry "arg_attrs" parseDictionaryAttributesOutter
 
 def tryParseDEntrySymName : PState (Option String) := do
   tryParseDictionaryEntry "sym_name" parseString
@@ -53,38 +45,37 @@ def tryParseDEntrySymName : PState (Option String) := do
 def tryParseDEntrySymVisibility : PState (Option String) := do
   tryParseDictionaryEntry "sym_visibility" parseString
 
-def parseFunctionDictionaryAttributes : PState (String × FunctionType) := do
+def parseFunctionDictionaryAttributes : PState (String × FunctionType × (List (List Attribute)) × (List (List Attribute))) := do
   let mut functionName : Option String := none
   let mut functionType : Option FunctionType := none
   let mut functionVisibility : Option String := none
-  let mut functionResultAttributes : Option (List Attribute) := none
-  for i in [:4] do
-    dbg_trace s!"Iteration {i}"
+  let mut functionResultAttributes : List (List Attribute) := []
+  let mut functionArgAttributes : List (List Attribute) := []
+  for _ in [:5] do
     if let some name ← tryParseDEntrySymName then
-      dbg_trace "name"
       functionName := name
       let st ← get
       if st.is "," then parseItem "," else break
     if let some t ← tryParseDEntryFunctionType then
-      dbg_trace "type"
       functionType := t
       let st ← get
       if st.is "," then parseItem "," else break
     if let some res ← tryParseDEntryResultAttributes then
-      dbg_trace "attributes"
       functionResultAttributes := res
       let st ← get
       if st.is "," then parseItem "," else break
+    if let some res ← tryParseDEntryArgAttributes then
+      functionArgAttributes := res
+      let st ← get
+      if st.is "," then parseItem "," else break
     if let some visibility ← tryParseDEntrySymVisibility then
-      dbg_trace "visibility"
       functionVisibility := visibility
       let st ← get
       if st.is "," then parseItem "," else break
-  dbg_trace s!"{repr functionName} {repr functionType} {repr functionVisibility} {repr functionResultAttributes}"
   let st ← get
   if let some name := functionName then
     if let some typ := functionType then
-      return (name, typ)
+      return (name, typ, functionArgAttributes, functionResultAttributes)
     else
       throw <| st.error "A5"
   else
@@ -93,14 +84,23 @@ def parseFunctionDictionaryAttributes : PState (String × FunctionType) := do
 def parseFunction : PState Function := do
   push "parseFunction"
   parseItem "\"func.func\""
-  let valueUseList ← parseValueUseList
+  parseItem "()"
   parseItem "<{"
-  let (name,typ) ← parseFunctionDictionaryAttributes
+  let (name,typ,argAttrs,resAttrs) ← parseFunctionDictionaryAttributes
   parseItem "}>"
-  let region ← parseRegion parseOperation
+  let mut funcInputs : List FuncInput := []
+  parseItem "({"
+  let st ← get
+  if st.is "^" then
+    discard <| parseUnusedId
+    funcInputs ← parseInputFuncInputs
+    parseItem ":"
+  let operations ← parseListAux "}" none parseOperation
+  let body : InputFunc := InputFunc.mk funcInputs operations
+  parseItem "})"
   parseItem ":"
-  let functiontype ← parseFunctionType
-  let r : Function := { funcId := name , funcInputs := [] , funcOutputs := [] , funcBody := region }
+  discard <| parseFunctionType -- could be more precise () -> ()
+  let r : Function := { funcId := name , funcArgAttrs := argAttrs , funcResAttrs := resAttrs , funcType := typ, funcBody := body }
   pop "parseFunction"
   return r
 
