@@ -130,6 +130,7 @@ inductive OpName where
 structure FuncInput where
   id : FuncId
   typ : ValueType
+  attrs : List Attribute
   deriving Repr, Inhabited, Nonempty
 
 mutual
@@ -151,6 +152,9 @@ mutual
     | return
       (operands : List ValueId)
       (signature : FunctionType)
+    | constant
+      (outputs : List ValueId)
+      (value : Constant)
     deriving Repr, Inhabited, Nonempty
 
 end

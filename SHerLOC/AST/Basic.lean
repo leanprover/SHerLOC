@@ -9,4 +9,5 @@ import SHerLOC.AST.Identifiers
 import SHerLOC.AST.Constants
 import SHerLOC.AST.Operations
 import SHerLOC.AST.Functions
+import SHerLOC.AST.Modules
 import SHerLOC.AST.Programs

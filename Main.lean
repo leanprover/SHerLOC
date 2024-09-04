@@ -5,13 +5,49 @@ Authors: Jean-Baptiste Tristan
 -/
 import SHerLOC
 
-open List System IO FS FilePath
+open System IO FilePath Process FS Std
 
-def main (args : List String) : IO Unit := do
-  if args.length != 1 then
-    IO.println "Expected 1 argument"
-    IO.Process.exit 1
-  let file : FilePath := args[0]!
-  let content ← readFile file
-  let content := StableHLO.parse content.data
-  IO.println s!"{repr content}"
+def main (args : List String) : IO UInt32 := do
+  if args.length = 0 then
+    let o ← output { cmd := "ls", args := #["Tests"] }
+    let files := o.stdout.splitOn "\n"
+    let files := files.filter fun s => s.takeRight 5 = ".mlir"
+    let mut passed := []
+    let mut failed := []
+    for file in files do
+      let fp : FilePath := System.mkFilePath ["Tests", file]
+      let content ← readFile fp
+      let content := StableHLO.parse content.data
+      match content with
+      | .ok _ =>
+        passed := file :: passed
+      | .error _ =>
+        failed := file :: failed
+    IO.println "\nPassed:\n"
+    for file in passed do
+      IO.println file
+    IO.println "\nFailed:\n"
+    for file in failed do
+      IO.println file
+    IO.println ""
+    if failed.length > 0 then
+      return 1
+    else
+      return 0
+  else if args.length = 1 then
+    if let some _ := args[0]!.toNat? then
+      let file : String := "test" ++ args[0]! ++ ".mlir"
+      let fp : FilePath := System.mkFilePath ["Tests", file]
+      let content ← readFile fp
+      let content := StableHLO.parse content.data
+      match content with
+      | .ok p =>
+        IO.println s!"{repr p}"
+        return 0
+      | .error e =>
+        IO.println s!"{e.2.2}"
+        IO.println s!"{e.2.1}"
+        IO.println s!"{e.1}"
+        return 1
+    else panic! s!"Unexpected argument {args[0]!}, expected natural number"
+  else panic! s!"Unexpected number of arguments: {args.length}"

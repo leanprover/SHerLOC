@@ -14,10 +14,15 @@ import SHerLOC.AST.Operations
 
 namespace StableHLO
 
+structure FuncOutput where
+  typ : ValueType
+  attrs : List Attribute
+  deriving Repr, Inhabited, Nonempty
+
 structure Function where
   funcId : FuncId
   funcInputs : List FuncInput
-  funcOutputs : List ValueType
+  funcOutputs : List FuncOutput
   funcBody : List Operation
   deriving Repr, Inhabited, Nonempty
 

@@ -10,24 +10,35 @@ import SHerLOC.Parsing.Operations
 namespace StableHLO
 
 def parseFuncInput : PState FuncInput := do
+  push "parseFuncInput"
   let id ← parseValueId
   parseItem ":"
   let typ ← parseValueType
-  discard <| parseAttributes
-  return { id := id , typ := typ }
+  let attrs ←  parseAttributes
+  pop "parseFuncInput"
+  return { id := id , typ := typ , attrs := attrs }
 
 def parseFuncInputs : PState (List FuncInput) := do
-  parseList "(" ")" (some ",") parseFuncInput
+  push "parseFuncInputs"
+  let r ← parseList "(" ")" (some ",") parseFuncInput
+  pop "parseFuncInputs"
+  return r
 
-def parseFuncOutput : PState ValueType := do
+def parseFuncOutput : PState FuncOutput := do
+  push "parseFuncOutput"
   let typ ← parseValueType
-  discard <| parseAttributes
-  return typ
+  let attrs ← parseAttributes
+  pop "parseFuncOutput"
+  return { typ := typ , attrs := attrs }
 
-def parseFuncOutputs : PState (List ValueType) := do
-  parseList "(" ")" (some ",") parseFuncOutput
+def parseFuncOutputs : PState (List FuncOutput) := do
+  push "parseFuncOutputs"
+  let r ← parseList "(" ")" (some ",") parseFuncOutput
+  pop "parseFuncOutputs"
+  return r
 
 def parseFunction : PState Function := do
+  push "parseFunction"
   parseItem "func.func"
   parseItem "public"
   parseItem "@"
@@ -38,9 +49,13 @@ def parseFunction : PState Function := do
   let funcOutputs ← parseFuncOutputs
   let body ← parseOperations
   let func := { funcId := funcId , funcInputs := funcInputs , funcOutputs := funcOutputs , funcBody := body }
+  pop "parseFunction"
   return func
 
 def parseFunctions : PState (List Function) := do
-  parseList "{" "}" none parseFunction
+  push "parseFunctions"
+  let r ← parseList "{" "}" none parseFunction
+  pop "parseFunctions"
+  return r
 
 end StableHLO

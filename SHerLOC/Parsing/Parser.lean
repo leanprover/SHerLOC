@@ -7,16 +7,31 @@ import SHerLOC.AST.Basic
 
 namespace StableHLO
 
--- structure NonTerminal where
---   startLine : Nat
---   startColumn : Nat
---   endLine : Nat
---   endColumn : Nat
---   nonTerminal : String
---   deriving Repr, Inhabited, Nonempty
+structure Trace where
+  startLine : Nat
+  startColumn : Nat
+  parser : String
+  deriving Repr, Inhabited, Nonempty
 
--- instance : ToString NonTerminal where
---   toString := fun t : NonTerminal => s!"({t.startLine},{t.startColumn}):({t.endLine},{t.endColumn}):{t.nonTerminal}"
+instance : ToString Trace where
+  toString := fun t : Trace => s!"({t.startLine},{t.startColumn}):{t.parser}"
+
+instance : ToString (List Trace) where
+  toString := fun t : List Trace => t.foldl (fun s : String => fun t : Trace => s ++ s!"{t}\n") "\n"
+
+structure Derivation where
+  startLine : Nat
+  startColumn : Nat
+  endLine : Nat
+  endColumn : Nat
+  parser : String
+  deriving Repr, Inhabited, Nonempty
+
+instance : ToString Derivation where
+  toString := fun t : Derivation => s!"{t.parser}        ({t.startLine},{t.startColumn}):({t.endLine},{t.endColumn})"
+
+instance : ToString (List Derivation) where
+  toString := fun t : List Derivation => t.foldl (fun s : String => fun t : Derivation => s ++ s!"{t}\n") "\n"
 
 structure ParsingState where
   source : List Char     -- Source data being parsed
@@ -24,42 +39,45 @@ structure ParsingState where
   stop : Nat
   lineNumber : Nat
   columnNumber : Nat
-  --status : List NonTerminal    -- For debugging the parser
+  trace : List Trace            -- For debugging the parser
+  derivations : List Derivation -- For debugging the parser
   deriving Repr, Inhabited, Nonempty
 
-abbrev PState (T : Type) := StateT ParsingState (Except String) T
+abbrev PState (T : Type) := StateT ParsingState (Except (String × List Trace × List Derivation)) T
 
 def ParsingState.is (st : ParsingState) (keyword : String) : Bool := Id.run do
   let mut index := st.index
   for i in [st.index:st.stop] do
-    let c := st.source[i]!
-    if c = ' ' || c = '\t' || c = '\n' then index := index + 1
-    else break
+    if let some c := st.source[i]? then
+      if c = ' ' || c = '\t' || c = '\n' then index := index + 1
+      else break
+    else return false
   let mut valid := true
   for i in [:keyword.length] do
-    let c := st.source[index + i]!
-    if c != keyword.get! ⟨ i ⟩ then valid := false
+    if let some c := st.source[index + i]? then
+      if c != keyword.get! ⟨ i ⟩ then valid := false
+    else return false
   return valid
 
 def ParsingState.isDigit (st : ParsingState) : Bool :=
-  st.source[st.index]!.isDigit
+  if let some c := st.source[st.index]? then
+    c.isDigit
+  else false
 
-def ParsingState.error (st : ParsingState) (msg : String) : String := Id.run do
+def ParsingState.error (st : ParsingState) (msg : String) : String × (List Trace) × (List Derivation) := Id.run do
   let mut token := ""
   let mut started := false
   for i in [st.index:st.stop] do
-    let c := st.source[i]!
+    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in ParsingState.error"
     if ! started then
       if c = ' ' || c = '\t' || c = '\n' then ()
-      else started := true
+      else
+        started := true
+        token := token.push c
     else if c = ' ' || c = '\t' || c = '\n' then break
     else token := token.push c
-  s!"Parsing error line {st.lineNumber}, column {st.columnNumber} : expected {msg}, found {token}"
-
--- def record (st : ParsingState) (nonTerminal : String) : PState Unit := do
---   let st' ← get
---   let info : NonTerminal := { startLine := st.line, startColumn := st.column, endLine := st'.line, endColumn := st'.column, nonTerminal := nonTerminal }
---   set { st' with status := info :: st'.status }
+  let errorMsg := s!"Parsing error line {st.lineNumber}, column {st.columnNumber} : expected {msg} but found {token}"
+  return (errorMsg, st.trace, st.derivations)
 
 def skip : PState Unit := do
   let st ← get
@@ -67,7 +85,7 @@ def skip : PState Unit := do
   let mut lines := 0
   let mut column := st.columnNumber
   for i in [st.index:st.stop] do
-    let c := st.source[i]!
+    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in skip"
     if c = '\n' then
       count := count + 1
       lines := lines + 1
@@ -90,7 +108,7 @@ def parseItem (keyword : String) : PState Unit := do
   let st ← get
   let mut success := true
   for i in [:keyword.length] do
-    let c := st.source[st.index + i]!
+    let c := if let some c := st.source[st.index + i]? then c else panic s!"Indexing error in parseItem"
     if ! c = keyword.get! ⟨ i ⟩ then
       success := false
       break
@@ -107,7 +125,7 @@ def parseId : PState String := do
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    let c := st.source[i]!
+    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in parseId"
     if c.isAlphanum || c = '_' || c = '.' then token := token.push c
     else break
   if token.length != 0 then
@@ -124,7 +142,7 @@ def parseDecimal : PState Nat := do
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    let c := st.source[i]!
+    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in parseDecimal"
     if c.isDigit then token := token.push c
     else break
   if token.length != 0 then
@@ -143,7 +161,7 @@ def parseString : PState String := do
   let mut token := ""
   let mut escaped := false
   for i in [st.index:st.stop] do
-    let c := st.source[i]!
+    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in parseString"
     if c = '"' then
       if escaped then
         token := token.push c
@@ -162,6 +180,46 @@ def parseString : PState String := do
    }
   parseItem "\""
   return token
+
+def push (parser : String) : PState Unit := do
+  let st ← get
+  let traceItem : Trace := { startLine := st.lineNumber, startColumn := st.columnNumber, parser }
+  set { st with trace := traceItem :: st.trace   }
+
+def indent (n : Nat) : String := Id.run do
+  let mut token := ""
+  for _ in [:n] do
+    token := token.push ' '
+  return token
+
+def pop (parser : String) : PState Unit := do
+  let st ← get
+  if let some tail := st.trace.tail? then
+    let head := st.trace.head!
+    if head.parser = parser then
+      let derivation : Derivation := {
+        startLine := head.startLine,
+        startColumn := head.startColumn,
+        endLine := st.lineNumber,
+        endColumn := st.columnNumber,
+        parser := (indent tail.length) ++ parser }
+      set {st with trace := tail, derivations := derivation :: st.derivations }
+    else panic! s!"Trace mismatch: expected {parser} but found {head}"
+  else panic! "More pops than pushes, some parser is missing its push"
+
+partial def parseListOneorMoreAux (separator : String) (parse : PState T) : PState (List T) := do
+  let st ← get
+  if st.is separator then
+    parseItem separator
+    let head ← parse
+    let tail ← parseListOneorMoreAux separator parse
+    return head :: tail
+  else return []
+
+partial def parseListOneorMore (separator : String) (parse : PState T) : PState (List T) := do
+  let head ← parse
+  let tail ← parseListOneorMoreAux separator parse
+  return head :: tail
 
 partial def parseListAux (closingMark : String) (separator : Option String) (parse : PState T) : PState (List T) := do
   let st ← get
