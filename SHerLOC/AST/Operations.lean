@@ -144,7 +144,7 @@ mutual
 
   inductive Operation where
     | stable
-      (name : OpName)(inputValues : List ValueId)
+      (name : String)(inputValues : List ValueId)
       (inputFunctions : List InputFunc)
       (inputAttributes : List Attribute)
       (outputs : List ValueId)

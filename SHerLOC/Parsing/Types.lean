@@ -188,17 +188,18 @@ partial def parseValueType : PState ValueType := do
 
 end
 
+-- Temporary? Mulitple results?
 def parseValueTypesOutput : PState (List ValueType) := do
   push "parseValueTypesOutput"
-  let r ← parseListOneorMore "," parseValueType
+  let st ← get
+  let mut valueTypes : List ValueType := []
+  if st.is "(" then
+    valueTypes ← parseList "(" ")" "," parseValueType
+  else
+    let r ← parseValueType
+    valueTypes := [r]
   pop "parseValueTypesOutput"
-  return r
-
-def parseFunctionTypeShort : PState FunctionType := do
-  push "parseFunctionTypeShort"
-  let outputType ← parseValueTypesOutput
-  pop "parseFunctionTypeShort"
-  return FunctionType.short outputType
+  return valueTypes
 
 def parseValueTypes : PState (List ValueType) := do
   push "parseValueTypes"
@@ -206,14 +207,14 @@ def parseValueTypes : PState (List ValueType) := do
   pop "parseValueTypes"
   return r
 
-def parseFunctionTypeLong : PState FunctionType := do
+def parseFunctionType : PState FunctionType := do
   push "parseFunctionTypeLong"
   let inputTypes ← parseValueTypes
   parseItem "-"
   parseItem ">"
   let outputType ← parseValueTypesOutput
   pop "parseFunctionTypeLong"
-  return FunctionType.long inputTypes outputType
+  return { domain := inputTypes, range := outputType }
 
 def parseStringType : PState NonValueType := do
   push "parseStringType"

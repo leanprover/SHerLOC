@@ -6,6 +6,7 @@ Authors: Jean-Baptiste Tristan
 import SHerLOC.AST.Basic
 import SHerLOC.Parsing.Parser
 import SHerLOC.Parsing.Operations
+import SHerLOC.Parsing.Intermediate
 
 namespace StableHLO
 
@@ -37,20 +38,71 @@ def parseFuncOutputs : PState (List FuncOutput) := do
   pop "parseFuncOutputs"
   return r
 
+def tryParseDEntryFunctionType : PState (Option FunctionType) := do
+  tryParseDictionaryEntry "function_type" parseFunctionType
+
+def parseDictionaryAttributes : PState (List Attribute) := do
+  parseList "[{" "}]" "," parseAttribute
+
+def tryParseDEntryResultAttributes : PState (Option (List Attribute)) := do
+  tryParseDictionaryEntry "res_attrs" parseDictionaryAttributes
+
+def tryParseDEntrySymName : PState (Option String) := do
+  tryParseDictionaryEntry "sym_name" parseString
+
+def tryParseDEntrySymVisibility : PState (Option String) := do
+  tryParseDictionaryEntry "sym_visibility" parseString
+
+def parseFunctionDictionaryAttributes : PState (String × FunctionType) := do
+  let mut functionName : Option String := none
+  let mut functionType : Option FunctionType := none
+  let mut functionVisibility : Option String := none
+  let mut functionResultAttributes : Option (List Attribute) := none
+  for i in [:4] do
+    dbg_trace s!"Iteration {i}"
+    if let some name ← tryParseDEntrySymName then
+      dbg_trace "name"
+      functionName := name
+      let st ← get
+      if st.is "," then parseItem "," else break
+    if let some t ← tryParseDEntryFunctionType then
+      dbg_trace "type"
+      functionType := t
+      let st ← get
+      if st.is "," then parseItem "," else break
+    if let some res ← tryParseDEntryResultAttributes then
+      dbg_trace "attributes"
+      functionResultAttributes := res
+      let st ← get
+      if st.is "," then parseItem "," else break
+    if let some visibility ← tryParseDEntrySymVisibility then
+      dbg_trace "visibility"
+      functionVisibility := visibility
+      let st ← get
+      if st.is "," then parseItem "," else break
+  dbg_trace s!"{repr functionName} {repr functionType} {repr functionVisibility} {repr functionResultAttributes}"
+  let st ← get
+  if let some name := functionName then
+    if let some typ := functionType then
+      return (name, typ)
+    else
+      throw <| st.error "A5"
+  else
+    throw <| st.error "A6"
+
 def parseFunction : PState Function := do
   push "parseFunction"
-  parseItem "func.func"
-  parseItem "public"
-  parseItem "@"
-  let funcId ← parseId
-  let funcInputs ← parseFuncInputs
-  parseItem "-"
-  parseItem ">"
-  let funcOutputs ← parseFuncOutputs
-  let body ← parseOperations
-  let func := { funcId := funcId , funcInputs := funcInputs , funcOutputs := funcOutputs , funcBody := body }
+  parseItem "\"func.func\""
+  let valueUseList ← parseValueUseList
+  parseItem "<{"
+  let (name,typ) ← parseFunctionDictionaryAttributes
+  parseItem "}>"
+  let region ← parseRegion parseOperation
+  parseItem ":"
+  let functiontype ← parseFunctionType
+  let r : Function := { funcId := name , funcInputs := [] , funcOutputs := [] , funcBody := region }
   pop "parseFunction"
-  return func
+  return r
 
 def parseFunctions : PState (List Function) := do
   push "parseFunctions"

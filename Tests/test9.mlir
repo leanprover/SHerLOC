@@ -1,6 +1,7 @@
-module @jit_f attributes {jax.uses_shape_polymorphism = false, mhlo.num_partitions = 1 : i32, mhlo.num_replicas = 1 : i32} {
-  func.func public @main() -> (tensor<3xi32> {jax.result_info = "", mhlo.layout_mode = "default"}) {
-    %c = stablehlo.constant dense<[0, 1, 2]> : tensor<3xi32>
-    return %c : tensor<3xi32>
-  }
-}
+"builtin.module"() <{sym_name = "jit_f"}> ({
+  "func.func"() <{function_type = () -> tensor<3xi32>, res_attrs = [{jax.result_info = "", mhlo.layout_mode = "default"}], sym_name = "main", sym_visibility = "public"}> ({
+    %0 = "stablehlo.constant"() <{value = dense<[0, 1, 2]> : tensor<3xi32>}> : () -> tensor<3xi32>
+    "func.return"(%0) : (tensor<3xi32>) -> ()
+  }) : () -> ()
+}) {jax.uses_shape_polymorphism = false, mhlo.num_partitions = 1 : i32, mhlo.num_replicas = 1 : i32} : () -> ()
+

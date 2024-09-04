@@ -7,18 +7,20 @@ import SHerLOC.AST.Basic
 import SHerLOC.Parsing.Parser
 import SHerLOC.Parsing.Operations
 import SHerLOC.Parsing.Functions
+import SHerLOC.Parsing.Intermediate
 
 namespace StableHLO
 
 def parseModule : PState Module := do
   push "parseModule"
-  parseItem "module"
-  parseItem "@"
-  let modId ← parseId
-  parseItem "attributes"
-  let modAttrs ← parseAttributes
-  let modFuncs ← parseFunctions
-  let r : Module := { modId := modId, modAttrs, modFuncs }
+  parseItem "\"builtin.module\""
+  let valueUseList ← parseValueUseList
+  let dictionaryProperties ← parseDictionaryProperties
+  let region ← parseRegion parseFunction
+  let attributes ← parseAttributes
+  parseItem ":"
+  let functiontype ← parseFunctionType
+  let r : Module := { modId := "", modAttrs := attributes, modFuncs := region }
   pop "parseModule"
   return r
 
