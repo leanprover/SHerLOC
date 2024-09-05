@@ -11,8 +11,8 @@ namespace StableHLO
 
 def parseComplexElementType : PState ComplexType := do
   push "parseComplexElementType"
-  if ← is "f32" then parseItem "f32" ; pop "parseComplexElementType"; return ComplexType.f32
-  else if ← is "f64" then parseItem "f64" ; pop "parseComplexElementType"; return ComplexType.f64
+  if ← isParse "f32" then pop "parseComplexElementType"; return ComplexType.f32
+  else if ← isParse "f64" then pop "parseComplexElementType"; return ComplexType.f64
   else throw <| ← error "Complex element type"
 
 def parseComplexType : PState ComplexType := do
@@ -36,11 +36,11 @@ partial def parseShape : PState (List Nat) := do
 
 def parseTensorElementType : PState TensorElementType := do
   push "parseTensorElementType"
-  if (← is "i1") && ! (← is "i16") then parseItem "i1" ; pop "parseTensorElementType"; return TensorElementType.booleanType
-  else if ← is "complex" then pop "parseTensorElementType"; return TensorElementType.complexType <| ← parseComplexType
-  else if let some r ← tryParseIntegerType then pop "parseTensorElementType"; return TensorElementType.integerType r
-  else if let some r ← tryParseFloatType then pop "parseTensorElementType"; return TensorElementType.floatType r
-  else throw <| ← error "TensorElementType"
+  if let some r ← tryParseIntegerType then pop "parseTensorElementType"; return TensorElementType.integerType r
+  if ← isParse "i1" then pop "parseTensorElementType"; return TensorElementType.booleanType
+  if ← is "complex" then pop "parseTensorElementType"; return TensorElementType.complexType <| ← parseComplexType
+  if let some r ← tryParseFloatType then pop "parseTensorElementType"; return TensorElementType.floatType r
+  throw <| ← error "TensorElementType"
 
 def parseQuantizationStorageType : PState IntegerType := do
   push "parseQuantizationStorageType"

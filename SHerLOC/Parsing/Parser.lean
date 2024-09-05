@@ -45,27 +45,6 @@ structure ParsingState where
 
 abbrev PState (T : Type) := StateT ParsingState (Except (String × List Trace × List Derivation)) T
 
-def is (keyword : String) : PState Bool := do
-  let st ← get
-  let mut index := st.index
-  for i in [st.index:st.stop] do
-    if let some c := st.source[i]? then
-      if c = ' ' || c = '\t' || c = '\n' then index := index + 1
-      else break
-    else return false
-  let mut valid := true
-  for i in [:keyword.length] do
-    if let some c := st.source[index + i]? then
-      if c != keyword.get! ⟨ i ⟩ then valid := false
-    else return false
-  return valid
-
-def isDigit : PState Bool := do
-  let st ← get
-  if let some c := st.source[st.index]? then
-    return c.isDigit
-  else return false
-
 def error (msg : String) : PState (String × (List Trace) × (List Derivation) ):= do
   let st ← get
   let mut token := ""
@@ -122,6 +101,43 @@ def parseItem (keyword : String) : PState Unit := do
       }
   else
     throw <| ← error keyword
+
+def is (keyword : String) : PState Bool := do
+  let st ← get
+  let mut index := st.index
+  for i in [st.index:st.stop] do
+    if let some c := st.source[i]? then
+      if c = ' ' || c = '\t' || c = '\n' then index := index + 1
+      else break
+    else return false
+  let mut valid := true
+  for i in [:keyword.length] do
+    if let some c := st.source[index + i]? then
+      if c != keyword.get! ⟨ i ⟩ then valid := false
+    else return false
+  return valid
+
+def isParse (keyword : String) : PState Bool := do
+  let st ← get
+  let mut index := st.index
+  for i in [st.index:st.stop] do
+    if let some c := st.source[i]? then
+      if c = ' ' || c = '\t' || c = '\n' then index := index + 1
+      else break
+    else return false
+  let mut valid := true
+  for i in [:keyword.length] do
+    if let some c := st.source[index + i]? then
+      if c != keyword.get! ⟨ i ⟩ then valid := false
+    else return false
+  if valid then parseItem keyword
+  return valid
+
+def isDigit : PState Bool := do
+  let st ← get
+  if let some c := st.source[st.index]? then
+    return c.isDigit
+  else return false
 
 def parseItems (keywords : List String) : PState Unit := do
   for i in [:keywords.length] do
@@ -243,8 +259,7 @@ def pop (parser : String) : PState Unit := do
   else panic! "More pops than pushes, some parser is missing its push"
 
 partial def parseListOneorMoreAux (separator : String) (parse : PState T) : PState (List T) := do
-  if ← is separator then
-    parseItem separator
+  if ← isParse separator then
     let head ← parse
     let tail ← parseListOneorMoreAux separator parse
     return head :: tail
@@ -257,7 +272,7 @@ partial def parseListOneorMore (separator : String) (parse : PState T) : PState 
 
 partial def parseListAux (closingMark : String) (separator : Option String) (parse : PState T) : PState (List T) := do
   if ← is closingMark then return []
-  if let some sep := separator then if ← is sep then parseItem sep ; return ← parseListAux closingMark separator parse
+  if let some sep := separator then if ← isParse sep then return ← parseListAux closingMark separator parse
   let attr ← parse
   let attrs ← parseListAux closingMark separator parse
   return attr :: attrs

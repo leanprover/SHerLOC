@@ -11,10 +11,11 @@ namespace StableHLO
 
 def tryParseBooleanLiteral : PState (Option BooleanLiteral) := do
   push "tryParseBooleanLiteral"
-  if ← is "true" then parseItem "true" ; pop "tryParseBooleanLiteral" ; return some BooleanLiteral.true
-  if ← is "false" then parseItem "false" ; pop "tryParseBooleanLiteral" ; return some BooleanLiteral.false
+  let mut r : Option BooleanLiteral := none
+  if ← isParse "true" then r := some BooleanLiteral.true
+  if ← isParse "false" then r := some BooleanLiteral.false
   pop "tryParseBooleanLiteral"
-  return none
+  return r
 
 def parseComplexLiteral : PState ComplexLiteral := do
   push "parseComplexLiteral"
@@ -90,13 +91,11 @@ def parseArrayConstant : PState TensorConstant := do
   let typ : TensorElementType ← parseTensorElementType
   let typ : TensorElementTypeGen := TensorElementTypeGen.classic typ
   let typ : TensorType := { shape := [], tensorElementTypeGen := typ }
-  if ← is ">" then
-    parseItem ">"
+  if ← isParse ">" then
     let literal := DenseLiteral.denseElements []
     pop "parseArrayConstant"
     return { literal := literal, type := typ }
-  else if ← is ":" then
-    parseItem ":"
+  else if ← isParse ":" then
     let literal ← parseListAux ">" "," parseElementLiteral -- This will surely need to be generalized
     parseItem ">"
     let literal := DenseLiteral.denseElements literal
@@ -118,92 +117,103 @@ def parseStringConstant : PState Constant := do
 
 def tryParseComparisonDirection : PState (Option ComparisonDirection) := do
   push "tryParseComparisonDirection"
-  if ← is "EQ" then parseItem "EQ" ; pop "tryParseComparisonDirection"; return ComparisonDirection.eq
-  if ← is "NE" then parseItem "NE" ; pop "tryParseComparisonDirection"; return ComparisonDirection.ne
-  if ← is "GE" then parseItem "GE" ; pop "tryParseComparisonDirection"; return ComparisonDirection.ge
-  if ← is "GT" then parseItem "GT" ; pop "tryParseComparisonDirection"; return ComparisonDirection.gt
-  if ← is "LE" then parseItem "LE" ; pop "tryParseComparisonDirection"; return ComparisonDirection.le
-  if ← is "LT" then parseItem "LT" ; pop "tryParseComparisonDirection"; return ComparisonDirection.lt
+  let mut r := none
+  if ← isParse "EQ" then r := ComparisonDirection.eq
+  if ← isParse "NE" then r := ComparisonDirection.ne
+  if ← isParse "GE" then r := ComparisonDirection.ge
+  if ← isParse "GT" then r := ComparisonDirection.gt
+  if ← isParse "LE" then r := ComparisonDirection.le
+  if ← isParse "LT" then r := ComparisonDirection.lt
   pop "tryParseComparisonDirection"
-  return none
+  return r
 
 def tryParseCompareType : PState (Option CompareType) := do
   push "tryParseCompareType"
-  if ← is "FLOAT" then parseItem "FLOAT" ; pop "tryParseCompareType"; return CompareType.float
-  if ← is "TOTALORDER" then parseItem "TOTALORDER" ; pop "tryParseCompareType"; return CompareType.totalOrder
-  if ← is "SIGNED" then parseItem "SIGNED" ; pop "tryParseCompareType"; return CompareType.signed
-  if ← is "UNSIGNED" then parseItem "UNSIGNED" ; pop "tryParseCompareType"; return CompareType.unsigned
+  let mut r := none
+  if ← isParse "FLOAT" then r := CompareType.float
+  if ← isParse "TOTALORDER" then r := CompareType.totalOrder
+  if ← isParse "SIGNED" then r := CompareType.signed
+  if ← isParse "UNSIGNED" then r := CompareType.unsigned
   pop "tryParseCompareType"
-  return none
+  return r
 
 def tryParsePrecisionConfig : PState (Option PrecisionConfig) := do
   push "tryParsePrecisionConfig"
-  if ← is "DEFAULT" then parseItem "DEFAULT" ; pop "tryParsePrecisionConfig"; return PrecisionConfig.default
-  if ← is "HIGH" then parseItem "HIGH" ; pop "tryParsePrecisionConfig"; return PrecisionConfig.high
-  if ← is "HIGHEST" then parseItem "HIGHEST" ; pop "tryParsePrecisionConfig"; return PrecisionConfig.highest
+  let mut r := none
+  if ← isParse "DEFAULT" then r := PrecisionConfig.default
+  if ← isParse "HIGH" then r := PrecisionConfig.high
+  if ← isParse "HIGHEST" then r := PrecisionConfig.highest
   pop "tryParsePrecisionConfig"
-  return none
+  return r
 
 def tryParseFftType : PState (Option FftType) := do
   push "tryParseFftType"
-  if ← is "FFT" then parseItem "FFT" ; pop "tryParseFftType"; return FftType.fft
-  if ← is "IFFT" then parseItem "IFFT" ; pop "tryParseFftType"; return FftType.ifft
-  if ← is "RFFT" then parseItem "RFFT" ; pop "tryParseFftType"; return FftType.rfft
-  if ← is "IRFFT" then parseItem "IRFFT" ; pop "tryParseFftType"; return FftType.irfft
+  let mut r := none
+  if ← isParse "FFT" then r := FftType.fft
+  if ← isParse "IFFT" then r := FftType.ifft
+  if ← isParse "RFFT" then r := FftType.rfft
+  if ← isParse "IRFFT" then r := FftType.irfft
   pop "tryParseFftType"
-  return none
+  return r
 
 def tryParseChannelType : PState (Option ChannelType) := do
   push "tryParseChannelType"
-  if ← is "DEVICE_TO_DEVICE" then parseItem "DEVICE_TO_DEVICE" ; pop "tryParseChannelType"; return ChannelType.deviceToDevice
-  if ← is "HOST_TO_DEVICE" then parseItem "HOST_TO_DEVICE" ; pop "tryParseChannelType"; return ChannelType.hostToDevice
+  let mut r := none
+  if ← isParse "DEVICE_TO_DEVICE" then r := ChannelType.deviceToDevice
+  if ← isParse "HOST_TO_DEVICE" then r := ChannelType.hostToDevice
   pop "tryParseChannelType"
-  return none
+  return r
 
 def tryParseRngDistribution : PState (Option RngDistribution) := do
   push "tryParseRngDistribution"
-  if ← is "UNIFORM" then parseItem "UNIFORM" ; pop "tryParseRngDistribution"; return RngDistribution.uniform
-  if ← is "NORMAL" then parseItem "NORMAL" ; pop "tryParseRngDistribution"; return RngDistribution.normal
+  let mut r := none
+  if ← isParse "UNIFORM" then r := RngDistribution.uniform
+  if ← isParse "NORMAL" then r := RngDistribution.normal
   pop "tryParseRngDistribution"
-  return none
+  return r
 
 def tryParseRngAlgorithm : PState (Option RngAlgorithm) := do
   push "tryParseRngAlgorithm"
-  if ← is "DEFAULT" then parseItem "DEFAULT" ; pop "tryParseRngAlgorithm"; return RngAlgorithm.default
-  if ← is "THREE_FRY" then parseItem "THREE_FRY" ; pop "tryParseRngAlgorithm"; return RngAlgorithm.threeFry
-  if ← is "PHILOX" then parseItem "PHILOX" ; pop "tryParseRngAlgorithm"; return RngAlgorithm.philox
+  let mut r := none
+  if ← isParse "DEFAULT" then r := RngAlgorithm.default
+  if ← isParse "THREE_FRY" then r := RngAlgorithm.threeFry
+  if ← isParse "PHILOX" then r := RngAlgorithm.philox
   pop "tryParseRngAlgorithm"
-  return none
+  return r
 
 def tryParseTransposeA : PState (Option TransposeA) := do
   push "tryParseTransposeA"
-  if ← is "NO_TRANSPOSE" then parseItem "NO_TRANSPOSE" ; pop "tryParseTransposeA"; return TransposeA.noTranspose
-  if ← is "TRANSPOSE" then parseItem "TRANSPOSE" ; pop "tryParseTransposeA"; return TransposeA.transpose
-  if ← is "ADJOINT" then parseItem "ADJOINT" ; pop "tryParseTransposeA"; return TransposeA.adjoint
+  let mut r := none
+  if ← isParse "NO_TRANSPOSE" then r := TransposeA.noTranspose
+  if ← isParse "TRANSPOSE" then r := TransposeA.transpose
+  if ← isParse "ADJOINT" then r := TransposeA.adjoint
   pop "tryParseTransposeA"
-  return none
+  return r
 
 def tryParseEnumLiteral : PState (Option EnumLiteral) := do
   push "tryParseEnumLiteral"
-  if let some r ← tryParseComparisonDirection then pop "tryParseEnumLiteral"; return EnumLiteral.comparisonDirection r
-  else if let some r ← tryParseCompareType then pop "tryParseEnumLiteral"; return EnumLiteral.compareType r
-  else if let some r ← tryParsePrecisionConfig then pop "tryParseEnumLiteral"; return EnumLiteral.precisionConfig r
-  else if let some r ← tryParseFftType then pop "tryParseEnumLiteral"; return EnumLiteral.fftType r
-  else if let some r ← tryParseChannelType then pop "tryParseEnumLiteral"; return EnumLiteral.channelType r
-  else if let some r ← tryParseRngDistribution then pop "tryParseEnumLiteral"; return EnumLiteral.rngDistribution r
-  else if let some r ← tryParseRngAlgorithm then pop "tryParseEnumLiteral"; return EnumLiteral.rngAlgorithm r
-  else if let some r ← tryParseTransposeA then pop "tryParseEnumLiteral"; return EnumLiteral.transposeA r
-  else pop "tryParseEnumLiteral"; return none
+  let mut res := none
+  if let some r ← tryParseComparisonDirection then res := EnumLiteral.comparisonDirection r
+  if let some r ← tryParseCompareType then res := EnumLiteral.compareType r
+  if let some r ← tryParsePrecisionConfig then res := EnumLiteral.precisionConfig r
+  if let some r ← tryParseFftType then res := EnumLiteral.fftType r
+  if let some r ← tryParseChannelType then res := EnumLiteral.channelType r
+  if let some r ← tryParseRngDistribution then res := EnumLiteral.rngDistribution r
+  if let some r ← tryParseRngAlgorithm then res := EnumLiteral.rngAlgorithm r
+  if let some r ← tryParseTransposeA then res := EnumLiteral.transposeA r
+  pop "tryParseEnumLiteral";
+  return res
 
 def parseConstant : PState Constant := do
   push "parseConstant"
-  if let some r ← tryParseEnumLiteral then pop "parseConstant" ; return Constant.enumConstant r
   if let some r ← tryParseBooleanLiteral then pop "parseConstant" ; return Constant.booleanConstant r
   if ← is "\"" then pop "parseConstant" ; return ← parseStringConstant
   if ← is "(" then pop "parseConstant" ; return Constant.complexConstant <| ← parseComplexConstant
   if ← is "dense" then pop "parseConstant" ; return Constant.tensorConstant <| ← parseTensorConstant
   if ← is "array" then pop "parseConstant" ; return Constant.tensorConstant <| ← parseArrayConstant
+  if let some r ← tryParseEnumLiteral then pop "parseConstant" ; return Constant.enumConstant r
+  let r ← parseNumberConstant
   pop "parseConstant"
-  return Constant.numberConsant <| ← parseNumberConstant
+  return Constant.numberConsant <| r
 
 end StableHLO

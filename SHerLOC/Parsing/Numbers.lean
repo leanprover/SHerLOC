@@ -10,20 +10,21 @@ namespace StableHLO
 
 def tryParseIntegerType : PState (Option IntegerType) := do
   push "tryParseIntegerType"
-  if ← is "i2" then parseItem "i2" ; pop "tryParseIntegerType"; return some { sign := Signedness.signed , size := IntegerSize.b2 }
-  if ← is "i4" then parseItem "i4" ; pop "tryParseIntegerType"; return some { sign := Signedness.signed , size := IntegerSize.b4 }
-  if ← is "i8" then parseItem "i8" ; pop "tryParseIntegerType"; return some { sign := Signedness.signed , size := IntegerSize.b8 }
-  if ← is "i16" then parseItem "i16" ; pop "tryParseIntegerType"; return some { sign := Signedness.signed , size := IntegerSize.b16 }
-  if ← is "i32" then parseItem "i32" ; pop "tryParseIntegerType"; return some { sign := Signedness.signed , size := IntegerSize.b32 }
-  if ← is "i64" then parseItem "i64" ; pop "tryParseIntegerType"; return some { sign := Signedness.signed , size := IntegerSize.b64 }
-  if ← is "ui2" then parseItem "ui2" ; pop "tryParseIntegerType"; return some { sign := Signedness.unsigned , size := IntegerSize.b2 }
-  if ← is "ui4" then parseItem "ui4" ; pop "tryParseIntegerType"; return some { sign := Signedness.unsigned , size := IntegerSize.b4 }
-  if ← is "ui8" then parseItem "ui8" ; pop "tryParseIntegerType"; return some { sign := Signedness.unsigned , size := IntegerSize.b8 }
-  if ← is "ui16" then parseItem "ui16" ; pop "tryParseIntegerType"; return some { sign := Signedness.unsigned , size := IntegerSize.b16 }
-  if ← is "ui32" then parseItem "ui32" ; pop "tryParseIntegerType"; return some { sign := Signedness.unsigned , size := IntegerSize.b32 }
-  if ← is "ui64" then parseItem "ui64" ; pop "tryParseIntegerType"; return some { sign := Signedness.unsigned , size := IntegerSize.b64 }
+  let mut r : Option IntegerType := none
+  if ← isParse "i2" then r := some { sign := Signedness.signed , size := IntegerSize.b2 }
+  if ← isParse "i4" then r := some { sign := Signedness.signed , size := IntegerSize.b4 }
+  if ← isParse "i8" then r := some { sign := Signedness.signed , size := IntegerSize.b8 }
+  if ← isParse "i16" then r := some { sign := Signedness.signed , size := IntegerSize.b16 }
+  if ← isParse "i32" then r := some { sign := Signedness.signed , size := IntegerSize.b32 }
+  if ← isParse "i64" then r := some { sign := Signedness.signed , size := IntegerSize.b64 }
+  if ← isParse "ui2" then r := some { sign := Signedness.unsigned , size := IntegerSize.b2 }
+  if ← isParse "ui4" then r := some { sign := Signedness.unsigned , size := IntegerSize.b4 }
+  if ← isParse "ui8" then r := some { sign := Signedness.unsigned , size := IntegerSize.b8 }
+  if ← isParse "ui16" then r := some { sign := Signedness.unsigned , size := IntegerSize.b16 }
+  if ← isParse "ui32" then r := some { sign := Signedness.unsigned , size := IntegerSize.b32 }
+  if ← isParse "ui64" then r := some { sign := Signedness.unsigned , size := IntegerSize.b64 }
   pop "tryParseIntegerType"
-  return none
+  return r
 
 def parseIntegerType : PState IntegerType := do
   push "parseIntegerType"
@@ -33,8 +34,8 @@ def parseIntegerType : PState IntegerType := do
 def parseIntegerLiteral : PState IntegerLiteral := do
   push "parseIntegerLiteral"
   let mut sign := Sign.plus
-  if ← is "+" then parseItem "+"
-  else if ← is "-" then parseItem "-" ; sign := Sign.minus
+  if ← isParse "+" then sign := Sign.plus
+  else if ← isParse "-" then sign := Sign.minus
   let mut nat : Option Nat := none
   if ← is "0x" then
     nat ← parseHexaDecimal
@@ -57,17 +58,18 @@ def parseIntegerConstant : PState IntegerConstant := do
 
 def tryParseFloatType : PState (Option FloatType) := do
   push "tryParseFloatType"
-  if ← is "f8E4M3FN" then parseItem "f8E4M3FN" ; pop "tryParseFloatType"; return some FloatType.f8E4M3FN
-  if ← is "f8E5M2" then parseItem "f8E5M2" ; pop "tryParseFloatType"; return some FloatType.f8E5M2
-  if ← is "f8E4M3FNUZ" then parseItem "f8E4M3FNUZ" ; pop "tryParseFloatType"; return some FloatType.f8E4M3FNUZ
-  if ← is "f8E5M2FNUZ" then parseItem "f8E5M2FNUZ" ; pop "tryParseFloatType"; return some FloatType.f8E5M2FNUZ
-  if ← is "f8E4M3B11FNUZ" then parseItem "f8E4M3B11FNUZ" ; pop "tryParseFloatType"; return some FloatType.f8E4M3B11FNUZ
-  if ← is "bf16" then parseItem "bf16" ; pop "tryParseFloatType"; return some FloatType.bf16
-  if ← is "f16" then parseItem "f16" ; pop "tryParseFloatType"; return some FloatType.f16
-  if ← is "f32" then parseItem "f32" ; pop "tryParseFloatType"; return some FloatType.f32
-  if ← is "f64" then parseItem "f64" ; pop "tryParseFloatType"; return some FloatType.f64
+  let mut r : Option FloatType := none
+  if ← isParse "f8E4M3FN" then r := some FloatType.f8E4M3FN
+  if ← isParse "f8E5M2" then r := some FloatType.f8E5M2
+  if ← isParse "f8E4M3FNUZ" then r := some FloatType.f8E4M3FNUZ
+  if ← isParse "f8E5M2FNUZ" then r := some FloatType.f8E5M2FNUZ
+  if ← isParse "f8E4M3B11FNUZ" then r := some FloatType.f8E4M3B11FNUZ
+  if ← isParse "bf16" then r := some FloatType.bf16
+  if ← isParse "f16" then r := some FloatType.f16
+  if ← isParse "f32" then r := some FloatType.f32
+  if ← isParse "f64" then r := some FloatType.f64
   pop "tryParseFloatType"
-  return none
+  return r
 
 def parseFloatType : PState FloatType := do
   push "parseFloatType"
@@ -77,8 +79,8 @@ def parseFloatType : PState FloatType := do
 def parseFloatLiteral : PState FloatLiteral := do
   push "parseFloatLiteral"
   let mut sign := Sign.plus
-  if ← is "+" then parseItem "+"
-  else if ← is "-" then parseItem "-" ; sign := Sign.minus
+  if ← isParse "+" then sign := Sign.plus
+  else if ← isParse "-" then sign := Sign.minus
   if ← is "0x" then
     let nat ← parseHexaDecimal
     pop "parseFloatLiteral"
@@ -87,17 +89,13 @@ def parseFloatLiteral : PState FloatLiteral := do
     let nat ← parseDecimal
     let integerPart : IntegerLiteral := { sign := sign , decimal := nat }
     let mut fractionalPart : IntegerLiteral := { sign := Sign.plus, decimal := 0 }
-    if ← is "." then
-      parseItem "."
+    if ← isParse "." then
       fractionalPart := {fractionalPart with decimal := ← parseDecimal}
     let mut scientificPart : IntegerLiteral:= { sign := Sign.plus, decimal := 0 }
-
-    if (← is "e") || (← is "E") then
-      if ← is "e" then parseItem "e"
-      if ← is "E" then parseItem "E"
+    if (← isParse "e") || (← isParse "E") then
       let mut scientificSign := Sign.plus
-      if ← is "+" then parseItem "+"
-      else if ← is "-" then parseItem "-" ; scientificSign := Sign.minus
+      if ← isParse "+" then scientificSign := Sign.plus
+      else if ← isParse "-" then scientificSign := Sign.minus
       let nat ← parseDecimal
       scientificPart := { sign := scientificSign, decimal := nat }
     let parseResult := FloatLiteral.decimal
