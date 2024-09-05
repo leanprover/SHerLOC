@@ -63,10 +63,15 @@ structure IntegerConstant where
   type : IntegerType
   deriving Repr, Inhabited, Nonempty
 
-structure FloatLiteral where
+structure FloatLiteralDecimal where
   integerPart : IntegerLiteral
   fractionalPart : IntegerLiteral
   scientificPart : IntegerLiteral
+  deriving Repr, Inhabited, Nonempty
+
+inductive FloatLiteral where
+  | decimal (literal : FloatLiteralDecimal)
+  | hexaDecimal (literal : Nat)
   deriving Repr, Inhabited, Nonempty
 
 structure FloatConstant where

@@ -158,6 +158,34 @@ def parseDecimal : PState Nat := do
   else
     throw <| st.error s!"Decimal"
 
+def isHexDigit (c : Char) : Bool :=
+  c.val ≥ 48 && c.val ≤ 57 || c.val ≥ 65 && c.val ≤ 70 || c.val ≥ 97 && c.val ≤ 102
+
+def toNatHex (s : String) : Nat :=
+  s.foldl (fun n c =>  n*16 + (
+    if c.isDigit then c.toNat - '0'.toNat
+    else
+      if c.val <= 70 then 10 + (c.toNat - 'A'.toNat)
+      else 10 + (c.toNat - 'a'.toNat))) 0
+
+def parseHexaDecimal : PState Nat := do
+  skip
+  parseItem "0x"
+  let st ← get
+  let mut token := ""
+  for i in [st.index:st.stop] do
+    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in parseDecimal"
+    if isHexDigit c then token := token.push c
+    else break
+  if token.length != 0 then
+    set { st with
+      index := st.index + token.length,
+      columnNumber := st.columnNumber + token.length
+    }
+    return toNatHex token
+  else
+    throw <| st.error s!"HexaDecimal"
+
 def parseString : PState String := do
   skip
   parseItem "\""

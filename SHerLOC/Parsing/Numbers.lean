@@ -38,10 +38,19 @@ def parseIntegerLiteral : PState IntegerLiteral := do
   let mut sign := Sign.plus
   if st.is "+" then parseItem "+"
   else if st.is "-" then parseItem "-" ; sign := Sign.minus
-  let nat ← parseDecimal
-  let parseResult := { sign := sign , decimal := nat }
-  pop "parseIntegerLiteral"
-  return parseResult
+  let st ← get
+  let mut nat : Option Nat := none
+  if st.is "0x" then
+    nat ← parseHexaDecimal
+  else
+    nat ← parseDecimal
+  if let some v := nat then
+    let parseResult := { sign := sign , decimal := v }
+    pop "parseIntegerLiteral"
+    return parseResult
+  else
+    let st ← get
+    throw <| st.error "Integer literal"
 
 def parseIntegerConstant : PState IntegerConstant := do
   push "parseIntegerConstant"
@@ -78,31 +87,37 @@ def parseFloatLiteral : PState FloatLiteral := do
   let mut sign := Sign.plus
   if st.is "+" then parseItem "+"
   else if st.is "-" then parseItem "-" ; sign := Sign.minus
-  let nat ← parseDecimal
-  let integerPart := { sign := sign , decimal := nat }
-  let mut fractionalPart : IntegerLiteral := { sign := Sign.plus, decimal := 0 }
-  let st₁ ← get
-  if st₁.is "." then
-    parseItem "."
-    fractionalPart := {fractionalPart with decimal := ← parseDecimal}
-  let mut scientificPart : IntegerLiteral:= { sign := Sign.plus, decimal := 0 }
-  let st₂ ← get
-  if st₂.is "e" || st₂.is "E" then
-    if st₂.is "e" then parseItem "e"
-    if st₂.is "E" then parseItem "E"
-    let mut scientificSign := Sign.plus
-    let st₃ ← get
-    if st₃.is "+" then parseItem "+"
-    else if st₃.is "-" then parseItem "-" ; scientificSign := Sign.minus
+  let st ← get
+  if st.is "0x" then
+    let nat ← parseHexaDecimal
+    pop "parseFloatLiteral"
+    return FloatLiteral.hexaDecimal nat
+  else
     let nat ← parseDecimal
-    scientificPart := { sign := scientificSign, decimal := nat }
-  let parseResult :=
-    { integerPart := integerPart,
-      fractionalPart := fractionalPart,
-      scientificPart := scientificPart
-    }
-  pop "parseFloatLiteral"
-  return parseResult
+    let integerPart : IntegerLiteral := { sign := sign , decimal := nat }
+    let mut fractionalPart : IntegerLiteral := { sign := Sign.plus, decimal := 0 }
+    let st₁ ← get
+    if st₁.is "." then
+      parseItem "."
+      fractionalPart := {fractionalPart with decimal := ← parseDecimal}
+    let mut scientificPart : IntegerLiteral:= { sign := Sign.plus, decimal := 0 }
+    let st₂ ← get
+    if st₂.is "e" || st₂.is "E" then
+      if st₂.is "e" then parseItem "e"
+      if st₂.is "E" then parseItem "E"
+      let mut scientificSign := Sign.plus
+      let st₃ ← get
+      if st₃.is "+" then parseItem "+"
+      else if st₃.is "-" then parseItem "-" ; scientificSign := Sign.minus
+      let nat ← parseDecimal
+      scientificPart := { sign := scientificSign, decimal := nat }
+    let parseResult := FloatLiteral.decimal
+      { integerPart := integerPart,
+        fractionalPart := fractionalPart,
+        scientificPart := scientificPart
+      }
+    pop "parseFloatLiteral"
+    return parseResult
 
 def parseFloatConstant : PState FloatConstant := do
   push "parseFloatConstant"
