@@ -83,17 +83,15 @@ partial def parseOperationDictionaryAttributes : PState (List Attribute) := do
 
 partial def parseOperation : PState Operation := do
   push "parseOperation"
-  let st ← get
-  if st.is "\"func.return\"" then
+  if ← is "\"func.return\"" then
     let r ← parseReturn
     pop "parseOperation"
     return r
   let mut opOutputs := []
-  if st.is "%" then
+  if ← is "%" then
     opOutputs ← parseOpOutputs
     parseItem "="
-  let st₀ ← get
-  if st₀.is "\"func.call\"" then
+  if ← is "\"func.call\"" then
     let r ← parseCall opOutputs
     pop "parseOperation"
     return r
@@ -101,12 +99,10 @@ partial def parseOperation : PState Operation := do
   --let opInputValues ← parseOpInputValues
   let opInputValues ← parseValueUseList
   let mut opInputAttrs := []
-  let st₂ ← get
-  if st₂.is "<{" then
+  if ← is "<{" then
     opInputAttrs ← parseOperationDictionaryAttributes
   let mut opInputFuncs := []
-  let st₃ ← get
-  if st₃.is "(" then
+  if ← is "(" then
     opInputFuncs ← parseOpInputFuncs
   parseItem ":"
   let functiontype ← parseFunctionType

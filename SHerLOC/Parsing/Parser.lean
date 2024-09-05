@@ -45,7 +45,22 @@ structure ParsingState where
 
 abbrev PState (T : Type) := StateT ParsingState (Except (String × List Trace × List Derivation)) T
 
-def ParsingState.is (st : ParsingState) (keyword : String) : Bool := Id.run do
+-- def ParsingState.is (st : ParsingState) (keyword : String) : Bool := Id.run do
+--   let mut index := st.index
+--   for i in [st.index:st.stop] do
+--     if let some c := st.source[i]? then
+--       if c = ' ' || c = '\t' || c = '\n' then index := index + 1
+--       else break
+--     else return false
+--   let mut valid := true
+--   for i in [:keyword.length] do
+--     if let some c := st.source[index + i]? then
+--       if c != keyword.get! ⟨ i ⟩ then valid := false
+--     else return false
+--   return valid
+
+def is (keyword : String) : PState Bool := do
+  let st ← get
   let mut index := st.index
   for i in [st.index:st.stop] do
     if let some c := st.source[i]? then
@@ -59,10 +74,11 @@ def ParsingState.is (st : ParsingState) (keyword : String) : Bool := Id.run do
     else return false
   return valid
 
-def ParsingState.isDigit (st : ParsingState) : Bool :=
+def isDigit : PState Bool := do
+  let st ← get
   if let some c := st.source[st.index]? then
-    c.isDigit
-  else false
+    return c.isDigit
+  else return false
 
 def ParsingState.error (st : ParsingState) (msg : String) : String × (List Trace) × (List Derivation) := Id.run do
   let mut token := ""
@@ -240,8 +256,7 @@ def pop (parser : String) : PState Unit := do
   else panic! "More pops than pushes, some parser is missing its push"
 
 partial def parseListOneorMoreAux (separator : String) (parse : PState T) : PState (List T) := do
-  let st ← get
-  if st.is separator then
+  if ← is separator then
     parseItem separator
     let head ← parse
     let tail ← parseListOneorMoreAux separator parse
@@ -254,9 +269,8 @@ partial def parseListOneorMore (separator : String) (parse : PState T) : PState 
   return head :: tail
 
 partial def parseListAux (closingMark : String) (separator : Option String) (parse : PState T) : PState (List T) := do
-  let st ← get
-  if st.is closingMark then return []
-  if let some sep := separator then if st.is sep then parseItem sep ; return ← parseListAux closingMark separator parse
+  if ← is closingMark then return []
+  if let some sep := separator then if ← is sep then parseItem sep ; return ← parseListAux closingMark separator parse
   let attr ← parse
   let attrs ← parseListAux closingMark separator parse
   return attr :: attrs

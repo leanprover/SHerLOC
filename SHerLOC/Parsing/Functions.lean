@@ -40,24 +40,19 @@ def parseFunctionDictionaryAttributes : PState (String × FunctionType × (List 
   for _ in [:5] do
     if let some name ← tryParseDEntrySymName then
       functionName := name
-      let st ← get
-      if st.is "," then parseItem "," else break
+      if ← is "," then parseItem "," else break
     if let some t ← tryParseDEntryFunctionType then
       functionType := t
-      let st ← get
-      if st.is "," then parseItem "," else break
+      if ← is "," then parseItem "," else break
     if let some res ← tryParseDEntryResultAttributes then
       functionResultAttributes := res
-      let st ← get
-      if st.is "," then parseItem "," else break
+      if ← is "," then parseItem "," else break
     if let some res ← tryParseDEntryArgAttributes then
       functionArgAttributes := res
-      let st ← get
-      if st.is "," then parseItem "," else break
+      if ← is "," then parseItem "," else break
     if let some visibility ← tryParseDEntrySymVisibility then
       functionVisibility := visibility
-      let st ← get
-      if st.is "," then parseItem "," else break
+      if ← is "," then parseItem "," else break
   let st ← get
   if let some name := functionName then
     if let some typ := functionType then
@@ -75,8 +70,7 @@ def parseFunction : PState Function := do
   parseItem "}>"
   let mut funcInputs : List FuncInput := []
   parseItem "({"
-  let st ← get
-  if st.is "^" then
+  if ← is "^" then
     discard <| parseUnusedId
     funcInputs ← parseInputFuncInputs
     parseItem ":"

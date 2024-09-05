@@ -15,8 +15,7 @@ def parseModule : PState Module := do
   push "parseModule"
   parseItems ["\"builtin.module\"", "(", ")"]
   let mut name : Option FuncId := none
-  let st ← get
-  if st.is "<{" then
+  if ← is "<{" then
     parseItem "<{"
     parseItem "sym_name"
     parseItem "="
@@ -26,8 +25,7 @@ def parseModule : PState Module := do
   let region ← parseFunctions
   parseItem ")"
   let mut attributes : List Attribute := []
-  let st ← get
-  if st.is "{" then
+  if ← is "{" then
     attributes ← parseAttributes
   parseItems [":","(",")","->","(",")"]
   let r : Module := { modId := name, modAttrs := attributes, modFuncs := region }

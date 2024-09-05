@@ -12,8 +12,8 @@ namespace StableHLO
 def parseComplexElementType : PState ComplexType := do
   push "parseComplexElementType"
   let st ← get
-  if st.is "f32" then parseItem "f32" ; pop "parseComplexElementType"; return ComplexType.f32
-  else if st.is "f64" then parseItem "f64" ; pop "parseComplexElementType"; return ComplexType.f64
+  if ← is "f32" then parseItem "f32" ; pop "parseComplexElementType"; return ComplexType.f32
+  else if ← is "f64" then parseItem "f64" ; pop "parseComplexElementType"; return ComplexType.f64
   else throw <| st.error "Complex element type"
 
 def parseComplexType : PState ComplexType := do
@@ -27,8 +27,7 @@ def parseComplexType : PState ComplexType := do
 
 partial def parseShape : PState (List Nat) := do
   push "parseShape"
-  let st ← get
-  if ! st.isDigit then pop "parseShape"; return []
+  if ! (← isDigit) then pop "parseShape"; return []
   else
     let dim ← parseDecimal
     parseItem "x"
@@ -39,8 +38,8 @@ partial def parseShape : PState (List Nat) := do
 def parseTensorElementType : PState TensorElementType := do
   push "parseTensorElementType"
   let st ← get
-  if st.is "i1" && ! st.is "i16" then parseItem "i1" ; pop "parseTensorElementType"; return TensorElementType.booleanType
-  else if st.is "complex" then pop "parseTensorElementType"; return TensorElementType.complexType <| ← parseComplexType
+  if (← is "i1") && ! (← is "i16") then parseItem "i1" ; pop "parseTensorElementType"; return TensorElementType.booleanType
+  else if ← is "complex" then pop "parseTensorElementType"; return TensorElementType.complexType <| ← parseComplexType
   else if let some r ← tryParseIntegerType then pop "parseTensorElementType"; return TensorElementType.integerType r
   else if let some r ← tryParseFloatType then pop "parseTensorElementType"; return TensorElementType.floatType r
   else throw <| st.error "TensorElementType"
@@ -96,8 +95,7 @@ def parseQuantizationParameter : PState QuantizationParameter := do
 
 def parseQuantizationParameters : PState (List QuantizationParameter) := do
   push "parseQuantizationParameters"
-  let st ← get
-  if st.is "{" then
+  if ← is "{" then
     let quantizationParameters ← parseList "{" "}" (some ",") parseQuantizationParameter
     pop "parseQuantizationParameters"
     return quantizationParameters
@@ -112,14 +110,12 @@ def parseQuantizedTensorElementType : PState QuantizedTensorElementType := do
   parseItem "<"
   let quantizationStorageType ← parseQuantizationStorageType
   let mut quantizationStorageMinMax := none
-  let st₁ ← get
-  if st₁.is "<" then
+  if ← is "<" then
     quantizationStorageMinMax := some <| ← parseQuantizationStorageMinMax
   parseItem ":"
   let quantizationExpressedType ← parseQuantizationExpressedType
   let mut quantizationDimension := none
-  let st₂ ← get
-  if st₂.is ":" then
+  if ← is ":" then
     quantizationDimension := some <| ← parseQuantizationDimension
   parseItem ","
   let quantizationParameters ← parseQuantizationParameters
@@ -136,8 +132,7 @@ def parseQuantizedTensorElementType : PState QuantizedTensorElementType := do
 
 def parseTensorElementTypeGen : PState TensorElementTypeGen := do
   push "parseTensorElementTypeGen"
-  let st ← get
-  if st.is "!quant.uniform"
+  if ← is "!quant.uniform"
   then
     let quantizedTensorElementType ← parseQuantizedTensorElementType
     pop "parseTensorElementTypeGen"
@@ -175,12 +170,12 @@ partial def parseTupleType : PState ValueType := do
 partial def parseValueType : PState ValueType := do
   push "parseValueType"
   let st ← get
-  if st.is "tensor" then pop "parseValueType"; return ValueType.tensorType <| ← parseTensorType
-  else if st.is "tuple" then
+  if ← is "tensor" then pop "parseValueType"; return ValueType.tensorType <| ← parseTensorType
+  else if ← is "tuple" then
     let r ← parseTupleType
     pop "parseValueType"
     return r
-  else if st.is "token" then
+  else if ← is "token" then
     let r ← parseTokenType
     pop "parseValueType"
     return r
@@ -191,9 +186,8 @@ end
 -- Temporary? Mulitple results?
 def parseValueTypesOutput : PState (List ValueType) := do
   push "parseValueTypesOutput"
-  let st ← get
   let mut valueTypes : List ValueType := []
-  if st.is "(" then
+  if ← is "(" then
     valueTypes ← parseList "(" ")" "," parseValueType
   else
     let r ← parseValueType

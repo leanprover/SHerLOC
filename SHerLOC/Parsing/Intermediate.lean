@@ -32,8 +32,7 @@ def parseValueUseList : PState (List ValueId) := do
   return r
 
 def tryParseDictionaryEntry (name : String) (parser : PState T) : PState (Option T) := do
-  let st ← get
-  if st.is name then
+  if ← is name then
     parseItem name
     parseItem "="
     let t ← parser
