@@ -59,11 +59,11 @@ def parseIntegerConstant : PState IntegerConstant := do
 def tryParseFloatType : PState (Option FloatType) := do
   push "tryParseFloatType"
   let mut r : Option FloatType := none
-  if ← isParse "f8E4M3FN" then r := some FloatType.f8E4M3FN
-  if ← isParse "f8E5M2" then r := some FloatType.f8E5M2
-  if ← isParse "f8E4M3FNUZ" then r := some FloatType.f8E4M3FNUZ
-  if ← isParse "f8E5M2FNUZ" then r := some FloatType.f8E5M2FNUZ
   if ← isParse "f8E4M3B11FNUZ" then r := some FloatType.f8E4M3B11FNUZ
+  if ← isParse "f8E4M3FNUZ" then r := some FloatType.f8E4M3FNUZ
+  if ← isParse "f8E4M3FN" then r := some FloatType.f8E4M3FN
+  if ← isParse "f8E5M2FNUZ" then r := some FloatType.f8E5M2FNUZ
+  if ← isParse "f8E5M2" then r := some FloatType.f8E5M2
   if ← isParse "bf16" then r := some FloatType.bf16
   if ← isParse "f16" then r := some FloatType.f16
   if ← isParse "f32" then r := some FloatType.f32

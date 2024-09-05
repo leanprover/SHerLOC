@@ -18,18 +18,19 @@ def main (args : List String) : IO UInt32 := do
       let fp : FilePath := System.mkFilePath ["Tests", file]
       let content ← readFile fp
       let content := StableHLO.parse content.data
+      IO.print s!"Parsing {file}... "
       match content with
       | .ok _ =>
         passed := file :: passed
+        IO.println "success"
       | .error _ =>
         failed := file :: failed
-    IO.println "\nPassed:\n"
-    for file in passed do
-      IO.println file
-    IO.println "\nFailed:\n"
+        IO.println "failure"
+    IO.println "\nFailed tests:\n"
     for file in failed do
       IO.println file
     IO.println ""
+    IO.println s!"Passed: {passed.length}, Failed {failed.length}"
     if failed.length > 0 then
       return 1
     else
