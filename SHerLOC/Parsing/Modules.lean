@@ -32,4 +32,19 @@ def parseModule : PState Module := do
   pop "parseModule"
   return r
 
+def parseModules : PState (List Module) := do
+  parseItems ["\"builtin.module\"", "(", ")"]
+  let mut r : List Module := []
+  if ← is "<{" then
+    reset
+    r := [← parseModule]
+  else
+    parseItems ["(","{"]
+    if ← is "\"builtin.module\"" then
+      r ← parseListAux "})" none parseModule
+    else
+      reset
+      r := [← parseModule]
+  return r
+
 end StableHLO

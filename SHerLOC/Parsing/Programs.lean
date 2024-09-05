@@ -10,6 +10,6 @@ import SHerLOC.Parsing.Modules
 namespace StableHLO
 
 def parse (src : List Char) : Except (String × List Trace × List Derivation) Program := do
-  parseModule.run' <| ParsingState.mk src 0 src.length 1 0 [] []
+  parseModules.run' <| ParsingState.mk src 0 src.length 1 0 [] []
 
 end StableHLO

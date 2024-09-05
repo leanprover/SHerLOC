@@ -152,7 +152,7 @@ def parseTensorType : PState TensorType := do
 
 def parseTokenType : PState ValueType := do
   push "parseTokenType"
-  parseItem "token"
+  parseItem "!stablehlo.token"
   pop "parseTokenType"
   return ValueType.tokenType
 
@@ -172,7 +172,7 @@ partial def parseValueType : PState ValueType := do
     let r ← parseTupleType
     pop "parseValueType"
     return r
-  else if ← is "token" then
+  else if ← is "!stablehlo.token" then
     let r ← parseTokenType
     pop "parseValueType"
     return r

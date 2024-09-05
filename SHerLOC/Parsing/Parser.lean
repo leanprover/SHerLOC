@@ -45,6 +45,12 @@ structure ParsingState where
 
 abbrev PState (T : Type) := StateT ParsingState (Except (String × List Trace × List Derivation)) T
 
+-- For backtracking at the very beginning of parsing when deciding if there are 1 or more modules
+def reset : PState Unit := do
+  let st ← get
+  let src := st.source
+  set (ParsingState.mk src 0 src.length 1 0 [] [])
+
 def error (msg : String) : PState (String × (List Trace) × (List Derivation) ):= do
   let st ← get
   let mut token := ""
@@ -231,6 +237,18 @@ def parseString : PState String := do
    }
   parseItem "\""
   return token
+
+def flyOver (start stop : String) : PState Unit := do
+  skip
+  parseItem start
+  let st ← get
+  let mut token : String := ""
+  for _ in [st.index:st.stop] do
+    let st ← get
+    if ← isParse "->" then continue
+    if ← is stop then break
+    else set { st with index := st.index + 1, columnNumber := st.columnNumber + 1} -- Incorrect because of \n and \t but this code is temporary
+  parseItem stop
 
 def push (parser : String) : PState Unit := do
   let st ← get

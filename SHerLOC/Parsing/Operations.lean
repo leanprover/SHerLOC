@@ -13,7 +13,7 @@ namespace StableHLO
 
 def parseOpOutputs : PState (List ValueId) := do
   push "parseOpOutputs"
-  let r ← parseListAux "=" (some ",") parseValueId
+  let r ← parseListAux "=" (some ",") parseValueIdRes
   pop "parseOpOutputs"
   return r
 
@@ -96,7 +96,6 @@ partial def parseOperation : PState Operation := do
     pop "parseOperation"
     return r
   let opName ← parseString
-  --let opInputValues ← parseOpInputValues
   let opInputValues ← parseValueUseList
   let mut opInputAttrs := []
   if ← is "<{" then

@@ -113,8 +113,6 @@ inductive EnumLiteral where
   | transposeA (enum : TransposeA)
   deriving Repr, Inhabited, Nonempty
 
--- Deviation. There's not difference between classic and quantized tensor
--- literals, and I gave them a common type in the hierarchy
 inductive Constant where
   | booleanConstant (literal : BooleanLiteral)
   | integerConstant (constant : IntegerConstant)
@@ -124,6 +122,7 @@ inductive Constant where
   | tensorConstant (constant : TensorConstant)
   | stringConstant (literal : String)
   | enumConstant (literal : EnumLiteral)
+  | special -- For complicated dictionnary properties we do not parse yet
   deriving Repr, Inhabited, Nonempty
 
 end StableHLO

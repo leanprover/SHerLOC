@@ -13,11 +13,15 @@ namespace StableHLO
 
 def parseAttribute : PState Attribute := do
   push "parseAttribute"
-  let id ← parseId
-  parseItem "="
-  let constant ← parseConstant
-  pop "parseAttribute"
-  return { id := id , constant := constant }
+  if ← isParse "use_global_device_ids" then -- Review
+    pop "parseAttribute"
+    return { id := "use_global_device_ids" , constant := Constant.booleanConstant BooleanLiteral.true }
+  else
+    let id ← parseId
+    parseItem "="
+    let constant ← parseConstant
+    pop "parseAttribute"
+    return { id := id , constant := constant }
 
 def parseAttributes : PState (List Attribute) := do
   push "parseAttributes"
@@ -27,7 +31,7 @@ def parseAttributes : PState (List Attribute) := do
 
 def parseValueUseList : PState (List ValueId) := do
   push "parseValueUseList"
-  let r ← parseList "(" ")" "," parseValueId
+  let r ← parseList "(" ")" "," parseValueIdOpArg
   pop "parseValueUseList"
   return r
 
