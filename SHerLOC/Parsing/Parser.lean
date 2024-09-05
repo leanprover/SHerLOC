@@ -45,20 +45,6 @@ structure ParsingState where
 
 abbrev PState (T : Type) := StateT ParsingState (Except (String × List Trace × List Derivation)) T
 
--- def ParsingState.is (st : ParsingState) (keyword : String) : Bool := Id.run do
---   let mut index := st.index
---   for i in [st.index:st.stop] do
---     if let some c := st.source[i]? then
---       if c = ' ' || c = '\t' || c = '\n' then index := index + 1
---       else break
---     else return false
---   let mut valid := true
---   for i in [:keyword.length] do
---     if let some c := st.source[index + i]? then
---       if c != keyword.get! ⟨ i ⟩ then valid := false
---     else return false
---   return valid
-
 def is (keyword : String) : PState Bool := do
   let st ← get
   let mut index := st.index
@@ -80,13 +66,14 @@ def isDigit : PState Bool := do
     return c.isDigit
   else return false
 
-def ParsingState.error (st : ParsingState) (msg : String) : String × (List Trace) × (List Derivation) := Id.run do
+def error (msg : String) : PState (String × (List Trace) × (List Derivation) ):= do
+  let st ← get
   let mut token := ""
   let mut started := false
   for i in [st.index:st.stop] do
     let c := if let some c := st.source[i]? then c else panic s!"Indexing error in ParsingState.error"
     if ! started then
-      if c = ' ' || c = '\t' || c = '\n' then ()
+      if c = ' ' || c = '\t' || c = '\n' then continue
       else
         started := true
         token := token.push c
@@ -134,7 +121,7 @@ def parseItem (keyword : String) : PState Unit := do
       columnNumber := st.columnNumber + keyword.length
       }
   else
-    throw <| st.error keyword
+    throw <| ← error keyword
 
 def parseItems (keywords : List String) : PState Unit := do
   for i in [:keywords.length] do
@@ -155,7 +142,7 @@ def parseId : PState String := do
     }
     return token
   else
-    throw <| st.error s!"Id"
+    throw <| ← error s!"Id"
 
 def parseDecimal : PState Nat := do
   skip
@@ -172,7 +159,7 @@ def parseDecimal : PState Nat := do
     }
     return token.toNat!
   else
-    throw <| st.error s!"Decimal"
+    throw <| ← error s!"Decimal"
 
 def isHexDigit (c : Char) : Bool :=
   c.val ≥ 48 && c.val ≤ 57 || c.val ≥ 65 && c.val ≤ 70 || c.val ≥ 97 && c.val ≤ 102
@@ -200,7 +187,7 @@ def parseHexaDecimal : PState Nat := do
     }
     return toNatHex token
   else
-    throw <| st.error s!"HexaDecimal"
+    throw <| ← error s!"HexaDecimal"
 
 def parseString : PState String := do
   skip

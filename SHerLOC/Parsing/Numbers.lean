@@ -27,9 +27,8 @@ def tryParseIntegerType : PState (Option IntegerType) := do
 
 def parseIntegerType : PState IntegerType := do
   push "parseIntegerType"
-  let st ← get
   if let some r ← tryParseIntegerType then pop "parseIntegerType" ; return r
-  else throw <| st.error "Integer type"
+  else throw <| ← error "Integer type"
 
 def parseIntegerLiteral : PState IntegerLiteral := do
   push "parseIntegerLiteral"
@@ -46,8 +45,7 @@ def parseIntegerLiteral : PState IntegerLiteral := do
     pop "parseIntegerLiteral"
     return parseResult
   else
-    let st ← get
-    throw <| st.error "Integer literal"
+    throw <| ← error "Integer literal"
 
 def parseIntegerConstant : PState IntegerConstant := do
   push "parseIntegerConstant"
@@ -73,9 +71,8 @@ def tryParseFloatType : PState (Option FloatType) := do
 
 def parseFloatType : PState FloatType := do
   push "parseFloatType"
-  let st ← get
   if let some r ← tryParseFloatType then pop "parseFloatType"; return r
-  else throw <| st.error "Float type"
+  else throw <| ← error "Float type"
 
 def parseFloatLiteral : PState FloatLiteral := do
   push "parseFloatLiteral"
@@ -121,10 +118,9 @@ def parseFloatConstant : PState FloatConstant := do
 
 def parseNumberType : PState NumberType := do
   push "parseNumberType"
-  let st ← get
   if let some r ← tryParseIntegerType then pop "parseNumberType"; return NumberType.integerType r
   else if let some r ← tryParseFloatType then pop "parseNumberType"; return NumberType.floatType r
-  else throw <| st.error "Number type"
+  else throw <| ← error "Number type"
 
 def parseNumberConstant : PState NumberConstant := do
   push "parseNumberConstant"

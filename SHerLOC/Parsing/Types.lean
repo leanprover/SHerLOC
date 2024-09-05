@@ -11,10 +11,9 @@ namespace StableHLO
 
 def parseComplexElementType : PState ComplexType := do
   push "parseComplexElementType"
-  let st ← get
   if ← is "f32" then parseItem "f32" ; pop "parseComplexElementType"; return ComplexType.f32
   else if ← is "f64" then parseItem "f64" ; pop "parseComplexElementType"; return ComplexType.f64
-  else throw <| st.error "Complex element type"
+  else throw <| ← error "Complex element type"
 
 def parseComplexType : PState ComplexType := do
   push "parseComplexType"
@@ -37,12 +36,11 @@ partial def parseShape : PState (List Nat) := do
 
 def parseTensorElementType : PState TensorElementType := do
   push "parseTensorElementType"
-  let st ← get
   if (← is "i1") && ! (← is "i16") then parseItem "i1" ; pop "parseTensorElementType"; return TensorElementType.booleanType
   else if ← is "complex" then pop "parseTensorElementType"; return TensorElementType.complexType <| ← parseComplexType
   else if let some r ← tryParseIntegerType then pop "parseTensorElementType"; return TensorElementType.integerType r
   else if let some r ← tryParseFloatType then pop "parseTensorElementType"; return TensorElementType.floatType r
-  else throw <| st.error "TensorElementType"
+  else throw <| ← error "TensorElementType"
 
 def parseQuantizationStorageType : PState IntegerType := do
   push "parseQuantizationStorageType"
@@ -169,7 +167,6 @@ partial def parseTupleType : PState ValueType := do
 
 partial def parseValueType : PState ValueType := do
   push "parseValueType"
-  let st ← get
   if ← is "tensor" then pop "parseValueType"; return ValueType.tensorType <| ← parseTensorType
   else if ← is "tuple" then
     let r ← parseTupleType
@@ -179,7 +176,7 @@ partial def parseValueType : PState ValueType := do
     let r ← parseTokenType
     pop "parseValueType"
     return r
-  else throw <| st.error "Value Type"
+  else throw <| ← error "Value Type"
 
 end
 

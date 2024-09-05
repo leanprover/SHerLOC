@@ -53,14 +53,13 @@ def parseFunctionDictionaryAttributes : PState (String × FunctionType × (List 
     if let some visibility ← tryParseDEntrySymVisibility then
       functionVisibility := visibility
       if ← is "," then parseItem "," else break
-  let st ← get
   if let some name := functionName then
     if let some typ := functionType then
       return (name, typ, functionArgAttributes, functionResultAttributes)
     else
-      throw <| st.error "A5"
+      throw <| ← error "A5"
   else
-    throw <| st.error "A6"
+    throw <| ← error "A6"
 
 def parseFunction : PState Function := do
   push "parseFunction"
