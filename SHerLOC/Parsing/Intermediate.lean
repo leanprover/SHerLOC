@@ -15,7 +15,7 @@ def parseAttribute : PState Attribute := do
   push "parseAttribute"
   if ← isParse "use_global_device_ids" then -- Review
     pop "parseAttribute"
-    return { id := "use_global_device_ids" , constant := Constant.booleanConstant BooleanLiteral.true }
+    return { id := "use_global_device_ids" , constant := { literal := Literal.use_global_device_ids, typ := none }}
   else
     let id ← parseId
     parseItem "="

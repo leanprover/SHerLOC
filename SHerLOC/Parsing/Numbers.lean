@@ -8,30 +8,13 @@ import SHerLOC.Parsing.Parser
 
 namespace StableHLO
 
-def tryParseIntegerType : PState (Option IntegerType) := do
-  push "tryParseIntegerType"
-  let mut r : Option IntegerType := none
-  if ← isChar 'i' then {
-    if ← isParse "i32" then r := some { sign := Signedness.signed , size := IntegerSize.b32 }
-    if ← isParse "i64" then r := some { sign := Signedness.signed , size := IntegerSize.b64 }
-    if ← isParse "i2" then r := some { sign := Signedness.signed , size := IntegerSize.b2 }
-    if ← isParse "i4" then r := some { sign := Signedness.signed , size := IntegerSize.b4 }
-    if ← isParse "i8" then r := some { sign := Signedness.signed , size := IntegerSize.b8 }
-    if ← isParse "i16" then r := some { sign := Signedness.signed , size := IntegerSize.b16 }
-  }
-  if ← isParse "ui32" then r := some { sign := Signedness.unsigned , size := IntegerSize.b32 }
-  if ← isParse "ui64" then r := some { sign := Signedness.unsigned , size := IntegerSize.b64 }
-  if ← isParse "ui2" then r := some { sign := Signedness.unsigned , size := IntegerSize.b2 }
-  if ← isParse "ui4" then r := some { sign := Signedness.unsigned , size := IntegerSize.b4 }
-  if ← isParse "ui8" then r := some { sign := Signedness.unsigned , size := IntegerSize.b8 }
-  if ← isParse "ui16" then r := some { sign := Signedness.unsigned , size := IntegerSize.b16 }
-  pop "tryParseIntegerType"
+def tryParseBooleanLiteral : PState (Option BooleanLiteral) := do
+  push "tryParseBooleanLiteral"
+  let mut r : Option BooleanLiteral := none
+  if ← isParse "true" then r := some BooleanLiteral.true
+  if ← isParse "false" then r := some BooleanLiteral.false
+  pop "tryParseBooleanLiteral"
   return r
-
-def parseIntegerType : PState IntegerType := do
-  push "parseIntegerType"
-  if let some r ← tryParseIntegerType then pop "parseIntegerType" ; return r
-  else throw <| ← error "Integer type"
 
 def parseIntegerLiteral : PState IntegerLiteral := do
   push "parseIntegerLiteral"
@@ -49,36 +32,6 @@ def parseIntegerLiteral : PState IntegerLiteral := do
     return parseResult
   else
     throw <| ← error "Integer literal"
-
-def parseIntegerConstant : PState IntegerConstant := do
-  push "parseIntegerConstant"
-  let i ← parseIntegerLiteral
-  parseItem ":"
-  let t ← parseIntegerType
-  pop "parseIntegerConstant"
-  return { literal := i, type := t }
-
-def tryParseFloatType : PState (Option FloatType) := do
-  push "tryParseFloatType"
-  let mut r : Option FloatType := none
-  if ← isChar 'f' then {
-    if ← isParse "f16" then r := some FloatType.f16
-    if ← isParse "f32" then r := some FloatType.f32
-    if ← isParse "f64" then r := some FloatType.f64
-    if ← isParse "f8E4M3B11FNUZ" then r := some FloatType.f8E4M3B11FNUZ
-    if ← isParse "f8E4M3FNUZ" then r := some FloatType.f8E4M3FNUZ
-    if ← isParse "f8E4M3FN" then r := some FloatType.f8E4M3FN
-    if ← isParse "f8E5M2FNUZ" then r := some FloatType.f8E5M2FNUZ
-    if ← isParse "f8E5M2" then r := some FloatType.f8E5M2
-  }
-  if ← isParse "bf16" then r := some FloatType.bf16
-  pop "tryParseFloatType"
-  return r
-
-def parseFloatType : PState FloatType := do
-  push "parseFloatType"
-  if let some r ← tryParseFloatType then pop "parseFloatType"; return r
-  else throw <| ← error "Float type"
 
 def parseFloatLiteral : PState FloatLiteral := do
   push "parseFloatLiteral"
@@ -110,26 +63,207 @@ def parseFloatLiteral : PState FloatLiteral := do
     pop "parseFloatLiteral"
     return parseResult
 
-def parseFloatConstant : PState FloatConstant := do
-  push "parseFloatConstant"
-  let floatLiteral ← parseFloatLiteral
-  parseItem ":"
-  let floatType ← parseFloatType
-  pop "parseFloatConstant"
-  return { literal := floatLiteral, type := floatType }
+def parseComplexLiteral : PState ComplexLiteral := do
+  push "parseComplexLiteral"
+  parseItem "("
+  let realPart ← parseFloatLiteral
+  parseItem ","
+  let imaginaryPart ← parseFloatLiteral
+  parseItem ")"
+  let parseResult := { real := realPart, imaginary := imaginaryPart }
+  pop "parseComplexLiteral"
+  return parseResult
 
-def parseNumberType : PState NumberType := do
-  push "parseNumberType"
-  if let some r ← tryParseIntegerType then pop "parseNumberType"; return NumberType.integerType r
-  else if let some r ← tryParseFloatType then pop "parseNumberType"; return NumberType.floatType r
-  else throw <| ← error "Number type"
+def parseElementLiteral : PState ElementLiteral := do
+  push "parseElementLiteral"
+  if ← is "(" then pop "parseElementLiteral" ; return ElementLiteral.complexLiteral <| ← parseComplexLiteral
+  if let some r ← tryParseBooleanLiteral then pop "parseElementLiteral" ; return ElementLiteral.booleanLiteral  r
+  pop "parseElementLiteral"
+  return ElementLiteral.floatLiteral <| ← parseFloatLiteral
 
-def parseNumberConstant : PState NumberConstant := do
-  push "parseNumberConstant"
-  let literal ← parseFloatLiteral
-  parseItem ":"
-  let numberType ← parseNumberType
-  pop "parseNumberConstant"
-  return { literal := literal, type :=numberType }
+def parseDenseElements (closingMark : String) : PState (List ElementLiteral) := do
+  push "parseDenseElements"
+  let r ← parseListAux closingMark "," parseElementLiteral
+  pop "parseDenseElements"
+  return r
+
+partial def parseDenseLiteral : PState DenseLiteral := do
+  push "parseDenseLiteral"
+  if ← is "[" then
+    let denseDimension ← parseList "[" "]" "," parseDenseLiteral
+    pop "parseDenseLiteral"
+    return DenseLiteral.denseDimension denseDimension
+  else
+    let denseElements ← parseDenseElements "]"
+    pop "parseDenseLiteral"
+    return DenseLiteral.denseElements denseElements
+
+def parseTensorLiteral : PState TensorLiteral := do
+  push "parseTensorLiteral"
+  parseItem "dense"
+  parseItem "<"
+  if ← is "[" then
+    let denseLiteral ← parseDenseLiteral
+    parseItem ">"
+    pop "parseTensorLiteral"
+    return denseLiteral
+  else
+    let denseElements ← parseDenseElements ">"
+    let denseLiteral := DenseLiteral.denseElements denseElements
+    parseItem ">"
+    pop "parseTensorLiteral"
+    return denseLiteral
+
+def parseStringLiteral : PState String := do
+  push "parseStringLiteral"
+  let r ← parseString
+  pop "parseStringLiteral"
+  return r
+
+def parseComparisonDirection : PState ComparisonDirection := do
+  push "parseComparisonDirection"
+  let mut r := none
+  if ← isParse "EQ" then r := ComparisonDirection.eq
+  if ← isParse "NE" then r := ComparisonDirection.ne
+  if ← isParse "GE" then r := ComparisonDirection.ge
+  if ← isParse "GT" then r := ComparisonDirection.gt
+  if ← isParse "LE" then r := ComparisonDirection.le
+  if ← isParse "LT" then r := ComparisonDirection.lt
+  if let some res := r then
+    pop "parseComparisonDirection"
+    return res
+  else throw <| ← error "comparison direction"
+
+def parseCompareType : PState CompareType := do
+  push "parseCompareType"
+  let mut r := none
+  if ← isParse "FLOAT" then r := CompareType.float
+  if ← isParse "TOTALORDER" then r := CompareType.totalOrder
+  if ← isParse "SIGNED" then r := CompareType.signed
+  if ← isParse "UNSIGNED" then r := CompareType.unsigned
+  if let some res := r then
+    pop "parseCompareType"
+    return res
+  else throw <| ← error "compaare type"
+
+def parsePrecisionConfig : PState PrecisionConfig := do
+  push "parsePrecisionConfig"
+  let mut r := none
+  if ← isParse "DEFAULT" then r := PrecisionConfig.default
+  if ← isParse "HIGH" then r := PrecisionConfig.high
+  if ← isParse "HIGHEST" then r := PrecisionConfig.highest
+  if let some res := r then
+    pop "parsePrecisionConfig"
+    return res
+  else throw <| ← error "precision config"
+
+def parseFftType : PState FftType := do
+  push "parseFftType"
+  let mut r := none
+  if ← isParse "FFT" then r := FftType.fft
+  if ← isParse "IFFT" then r := FftType.ifft
+  if ← isParse "RFFT" then r := FftType.rfft
+  if ← isParse "IRFFT" then r := FftType.irfft
+  if let some res := r then
+    pop "parseFftType"
+    return res
+  else throw <| ← error "FFT type"
+
+def parseChannelType : PState ChannelType := do
+  push "parseChannelType"
+  let mut r := none
+  if ← isParse "DEVICE_TO_DEVICE" then r := ChannelType.deviceToDevice
+  if ← isParse "HOST_TO_DEVICE" then r := ChannelType.hostToDevice
+  if let some res := r then
+    pop "parseChannelType"
+    return res
+  else throw <| ← error "channel type"
+
+def parseRngDistribution : PState RngDistribution := do
+  push "parseRngDistribution"
+  let mut r := none
+  if ← isParse "UNIFORM" then r := RngDistribution.uniform
+  if ← isParse "NORMAL" then r := RngDistribution.normal
+  if let some res := r then
+    pop "parseRngDistribution"
+    return res
+  else throw <| ← error "rng distribution"
+
+def parseRngAlgorithm : PState RngAlgorithm := do
+  push "parseRngAlgorithm"
+  let mut r := none
+  if ← isParse "DEFAULT" then r := RngAlgorithm.default
+  if ← isParse "THREE_FRY" then r := RngAlgorithm.threeFry
+  if ← isParse "PHILOX" then r := RngAlgorithm.philox
+  if let some res := r then
+    pop "parseRngAlgorithm"
+    return res
+  else throw <| ← error "rng algorithm"
+
+def parseTransposeA : PState TransposeA := do
+  push "parseTransposeA"
+  let mut r := none
+  if ← isParse "NO_TRANSPOSE" then r := TransposeA.noTranspose
+  if ← isParse "TRANSPOSE" then r := TransposeA.transpose
+  if ← isParse "ADJOINT" then r := TransposeA.adjoint
+  if let some res := r then
+    pop "parseTransposeA"
+    return res
+  else throw <| ← error "tranpose annotation"
+
+def parseEnumLiteral : PState EnumLiteral := do
+  push "parseEnumLiteral"
+  parseItem "#stablehlo"
+  parseItem "<"
+  let mut r := none
+  if ← isParse "comparison_direction" then r := EnumLiteral.comparisonDirection <| ← parseComparisonDirection
+  if ← isParse "comparison_type" then r := EnumLiteral.compareType <| ← parseCompareType
+  if ← isParse "precision_config" then r := EnumLiteral.precisionConfig <| ← parsePrecisionConfig
+  if ← isParse "fft_type" then r := EnumLiteral.fftType <| ← parseFftType
+  if ← isParse "channel_type" then r := EnumLiteral.channelType <| ← parseChannelType
+  if ← isParse "rng_distribution" then r := EnumLiteral.rngDistribution <| ← parseRngDistribution
+  if ← isParse "rng_algorithm" then r := EnumLiteral.rngAlgorithm <| ← parseRngAlgorithm
+  if ← isParse "transpose_a" then r := EnumLiteral.transposeA <| ← parseTransposeA
+  if let some res := r then
+    parseItem ">"
+    pop "parseEnumLiteral"
+    return res
+  else throw <| ← error "enumeration"
+
+def parseArrayLiteral : PState (List IntegerLiteral) := do
+  parseItems ["array", "<", "i64"]
+  let mut r := []
+  if ← isParse ":" then
+    r ← parseListAux ">" "," parseIntegerLiteral
+  parseItem ">"
+  return r
+
+def parseLiteral : PState Literal := do
+  skip
+  if (← isDigit) || (← is "+") || (← is "-") || (← is "t") || (← is "f") || (← is "(") then
+    return Literal.element <| ← parseElementLiteral
+  if ← is "dense" then
+    return Literal.tensor <| ← parseTensorLiteral
+  if ← is "\"" then
+    return Literal.string <| ← parseStringLiteral
+  if ← is "array" then
+    return Literal.array <| ← parseArrayLiteral
+
+  if ← isChar '#' then {
+    if ← isParse "#stablehlo.conv" then flyOver "<" ">"; return Literal.special
+    if ← isParse "#stablehlo.dot_algorithm" then flyOver "<" ">"; return Literal.special
+    if ← isParse "#stablehlo.dot" then flyOver "<" ">"; return Literal.special
+    if ← isParse "#stablehlo.channel_handle" then flyOver "<" ">"; return Literal.special
+    if ← isParse "#stablehlo.scatter" then flyOver "<" ">"; return Literal.special
+    if ← isParse "#stablehlo.gather" then flyOver "<" ">"; return Literal.special
+    if ← is "#stablehlo" then return Literal.enum <| ← parseEnumLiteral
+  }
+
+  if ← isChar '[' then {
+    if ← is "[[" then flyOver "[[" "]]"; return Literal.special
+    if ← is "[" then flyOver "[" "]"; return Literal.special
+  }
+
+  throw <| ← error "literal"
 
 end StableHLO

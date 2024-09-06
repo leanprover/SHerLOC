@@ -9,6 +9,59 @@ import SHerLOC.Parsing.Numbers
 
 namespace StableHLO
 
+def tryParseIntegerType : PState (Option IntegerType) := do
+  push "tryParseIntegerType"
+  let mut r : Option IntegerType := none
+  if ← isChar 'i' then {
+    if ← isParse "i32" then r := some { sign := Signedness.signed , size := IntegerSize.b32 }
+    if ← isParse "i64" then r := some { sign := Signedness.signed , size := IntegerSize.b64 }
+    if ← isParse "i2" then r := some { sign := Signedness.signed , size := IntegerSize.b2 }
+    if ← isParse "i4" then r := some { sign := Signedness.signed , size := IntegerSize.b4 }
+    if ← isParse "i8" then r := some { sign := Signedness.signed , size := IntegerSize.b8 }
+    if ← isParse "i16" then r := some { sign := Signedness.signed , size := IntegerSize.b16 }
+  }
+  if ← isParse "ui32" then r := some { sign := Signedness.unsigned , size := IntegerSize.b32 }
+  if ← isParse "ui64" then r := some { sign := Signedness.unsigned , size := IntegerSize.b64 }
+  if ← isParse "ui2" then r := some { sign := Signedness.unsigned , size := IntegerSize.b2 }
+  if ← isParse "ui4" then r := some { sign := Signedness.unsigned , size := IntegerSize.b4 }
+  if ← isParse "ui8" then r := some { sign := Signedness.unsigned , size := IntegerSize.b8 }
+  if ← isParse "ui16" then r := some { sign := Signedness.unsigned , size := IntegerSize.b16 }
+  pop "tryParseIntegerType"
+  return r
+
+def parseIntegerType : PState IntegerType := do
+  push "parseIntegerType"
+  if let some r ← tryParseIntegerType then pop "parseIntegerType" ; return r
+  else throw <| ← error "Integer type"
+
+def tryParseFloatType : PState (Option FloatType) := do
+  push "tryParseFloatType"
+  let mut r : Option FloatType := none
+  if ← isChar 'f' then {
+    if ← isParse "f16" then r := some FloatType.f16
+    if ← isParse "f32" then r := some FloatType.f32
+    if ← isParse "f64" then r := some FloatType.f64
+    if ← isParse "f8E4M3B11FNUZ" then r := some FloatType.f8E4M3B11FNUZ
+    if ← isParse "f8E4M3FNUZ" then r := some FloatType.f8E4M3FNUZ
+    if ← isParse "f8E4M3FN" then r := some FloatType.f8E4M3FN
+    if ← isParse "f8E5M2FNUZ" then r := some FloatType.f8E5M2FNUZ
+    if ← isParse "f8E5M2" then r := some FloatType.f8E5M2
+  }
+  if ← isParse "bf16" then r := some FloatType.bf16
+  pop "tryParseFloatType"
+  return r
+
+def parseFloatType : PState FloatType := do
+  push "parseFloatType"
+  if let some r ← tryParseFloatType then pop "parseFloatType"; return r
+  else throw <| ← error "Float type"
+
+def parseNumberType : PState NumberType := do
+  push "parseNumberType"
+  if let some r ← tryParseIntegerType then pop "parseNumberType"; return NumberType.integerType r
+  else if let some r ← tryParseFloatType then pop "parseNumberType"; return NumberType.floatType r
+  else throw <| ← error "Number type"
+
 def parseComplexElementType : PState ComplexType := do
   push "parseComplexElementType"
   if ← isParse "f32" then pop "parseComplexElementType"; return ComplexType.f32
@@ -72,9 +125,9 @@ def parseQuantizedTensorElementType : PState QuantizedTensorElementType := do
   let quantizationStorageType ← parseIntegerType
   let mut quantizationStorageMinMax := none
   if ← isParse "<" then
-    let min ← parseIntegerConstant
+    let min ← parseIntegerLiteral
     parseItem ":"
-    let max ← parseIntegerConstant
+    let max ← parseIntegerLiteral
     quantizationStorageMinMax := some (min,max)
     parseItem ">"
   parseItem ":"
@@ -179,5 +232,10 @@ def parseStringType : PState NonValueType := do
   parseItem "string"
   pop "parseStringType"
   return NonValueType.stringType
+
+def parseType : PState SType := do
+  if (← is "tensor") || (← is "tuple") || (← is "!stablehlo.token") then
+    return SType.valueType <|  ← parseValueType
+  return SType.nonValueType <| NonValueType.tensorElementType <| ← parseTensorElementType
 
 end StableHLO

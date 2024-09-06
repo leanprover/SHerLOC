@@ -13,116 +13,46 @@ import SHerLOC.AST.Types
 
 namespace StableHLO
 
-inductive BooleanLiteral where
-  | true
-  | false
+structure Constant where
+  literal : Literal
+  typ : Option SType
   deriving Repr, Inhabited, Nonempty
 
-structure ComplexLiteral where
-  real : FloatLiteral
-  imaginary : FloatLiteral
-  deriving Repr, Inhabited, Nonempty
+-- structure IntegerConstant where
+--   literal : IntegerLiteral
+--   type : IntegerType
+--   deriving Repr, Inhabited, Nonempty
 
-structure ComplexConstant where
-  literal : ComplexLiteral
-  type : ComplexType
-  deriving Repr, Inhabited, Nonempty
+-- structure FloatConstant where
+--   literal : FloatLiteral
+--   type : FloatType
+--   deriving Repr, Inhabited, Nonempty
 
--- Diverging from spec
--- I am going to defer until type checking to decide
--- whether the literal matches its type
--- This is because otherwise I have to lookahead arbitrarily far
--- to figure out the details of the tensor type
-inductive ElementLiteral where
-  | booleanLiteral (literal : BooleanLiteral)
-  | floatLiteral (literal : FloatLiteral)
-  | complexLiteral (literal : ComplexLiteral)
-  deriving Repr, Inhabited, Nonempty
+-- structure NumberConstant where
+--   literal : FloatLiteral
+--   type : NumberType
+--   deriving Repr, Inhabited, Nonempty
 
-inductive DenseLiteral where
-  | denseDimension (literal : List DenseLiteral)
-  | denseElements (literal : List ElementLiteral)
-  deriving Repr, Inhabited, Nonempty
+-- structure ComplexConstant where
+--   literal : ComplexLiteral
+--   type : ComplexType
+--   deriving Repr, Inhabited, Nonempty
 
-abbrev TensorLiteral := DenseLiteral
+-- structure TensorConstant where
+--   literal : TensorLiteral
+--   type : TensorType
+--   deriving Repr, Inhabited, Nonempty
 
-structure TensorConstant where
-  literal : TensorLiteral
-  type : TensorType
-  deriving Repr, Inhabited, Nonempty
-
-inductive ComparisonDirection where
-  | eq
-  | ne
-  | ge
-  | gt
-  | le
-  | lt
-  deriving Repr, Inhabited, Nonempty
-
-inductive CompareType where
-  | float
-  | totalOrder
-  | signed
-  | unsigned
-  deriving Repr, Inhabited, Nonempty
-
-inductive PrecisionConfig where
-  | default
-  | high
-  | highest
-  deriving Repr, Inhabited, Nonempty
-
-inductive FftType where
-  | fft
-  | ifft
-  | rfft
-  | irfft
-  deriving Repr, Inhabited, Nonempty
-
-inductive ChannelType where
-  | deviceToDevice
-  | hostToDevice
-  deriving Repr, Inhabited, Nonempty
-
-inductive RngDistribution where
-  | uniform
-  | normal
-  deriving Repr, Inhabited, Nonempty
-
-inductive RngAlgorithm where
-  | default
-  | threeFry
-  | philox
-  deriving Repr, Inhabited, Nonempty
-
-inductive TransposeA where
-  | noTranspose
-  | transpose
-  | adjoint
-  deriving Repr, Inhabited, Nonempty
-
-inductive EnumLiteral where
-  | comparisonDirection (enum : ComparisonDirection)
-  | compareType (enum : CompareType)
-  | precisionConfig (enum : PrecisionConfig)
-  | fftType (enum : FftType)
-  | channelType (enum : ChannelType)
-  | rngDistribution (enum : RngDistribution)
-  | rngAlgorithm (enum : RngAlgorithm)
-  | transposeA (enum : TransposeA)
-  deriving Repr, Inhabited, Nonempty
-
-inductive Constant where
-  | booleanConstant (literal : BooleanLiteral)
-  | integerConstant (constant : IntegerConstant)
-  | floatConstant (constant : FloatConstant)
-  | numberConsant (constant : NumberConstant)
-  | complexConstant (constant : ComplexConstant)
-  | tensorConstant (constant : TensorConstant)
-  | stringConstant (literal : String)
-  | enumConstant (literal : EnumLiteral)
-  | special -- For complicated dictionnary properties we do not parse yet
-  deriving Repr, Inhabited, Nonempty
+-- inductive Constant where
+--   | booleanConstant (literal : BooleanLiteral)
+--   | integerConstant (constant : IntegerConstant)
+--   | floatConstant (constant : FloatConstant)
+--   | numberConsant (constant : NumberConstant)
+--   | complexConstant (constant : ComplexConstant)
+--   | tensorConstant (constant : TensorConstant)
+--   | stringConstant (literal : String)
+--   | enumConstant (literal : EnumLiteral)
+--   | special -- For complicated dictionnary properties we do not parse yet
+--   deriving Repr, Inhabited, Nonempty
 
 end StableHLO

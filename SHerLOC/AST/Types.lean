@@ -12,6 +12,29 @@ import SHerLOC.AST.Numbers
 
 namespace StableHLO
 
+structure IntegerType where
+  sign : Signedness
+  size : IntegerSize
+  deriving Repr, Inhabited, Nonempty
+
+inductive FloatType where
+  | f8E4M3FN
+  | f8E5M2
+  | f8E4M3FNUZ
+  | f8E5M2FNUZ
+  | f8E4M3B11FNUZ
+  | bf16
+  | f16
+  | f32
+  | f64
+  | tf32
+  deriving Repr, Inhabited, Nonempty
+
+inductive NumberType where
+  | integerType (type : IntegerType)
+  | floatType (type: FloatType)
+  deriving Repr, Inhabited, Nonempty
+
 inductive ComplexType where
   | f32
   | f64
@@ -31,7 +54,7 @@ structure QuantizationParameter where
 
 structure QuantizedTensorElementType where
   quantizationStorageType : IntegerType
-  quantizationStorageMinMax : Option (IntegerConstant × IntegerConstant)
+  quantizationStorageMinMax : Option (IntegerLiteral × IntegerLiteral)
   quantizationExpressedType : FloatType
   quantizationDimension : Option IntegerLiteral
   quantizationParameters : List QuantizationParameter
