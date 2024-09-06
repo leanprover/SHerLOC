@@ -34,7 +34,7 @@ instance : ToString (List Derivation) where
   toString := fun t : List Derivation => t.foldl (fun s : String => fun t : Derivation => s ++ s!"{t}\n") "\n"
 
 structure ParsingState where
-  source : List Char     -- Source data being parsed
+  source : String    -- Source data being parsed
   index : Nat                  -- Index into source data
   stop : Nat
   lineNumber : Nat
@@ -56,7 +56,7 @@ def error (msg : String) : PState (String × (List Trace) × (List Derivation) )
   let mut token := ""
   let mut started := false
   for i in [st.index:st.stop] do
-    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in ParsingState.error"
+    let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in ParsingState.error"
     if ! started then
       if c = ' ' || c = '\t' || c = '\n' then continue
       else
@@ -73,7 +73,8 @@ def skip : PState Unit := do
   let mut lines := 0
   let mut column := st.columnNumber
   for i in [st.index:st.stop] do
-    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in skip"
+    -- let c := if let some c := st.source.get? ⟨ i ⟩  then c else panic s!"Indexing error in skip"
+    let c := st.source.get! ⟨ i ⟩
     if c = '\n' then
       count := count + 1
       lines := lines + 1
@@ -94,13 +95,8 @@ def skip : PState Unit := do
 def parseItem (keyword : String) : PState Unit := do
   skip
   let st ← get
-  let mut success := true
-  for i in [:keyword.length] do
-    let c := if let some c := st.source[st.index + i]? then c else panic s!"Indexing error in parseItem"
-    if ! c = keyword.get! ⟨ i ⟩ then
-      success := false
-      break
-  if success then
+  let sub : Substring := { str := st.source, startPos := ⟨ st.index ⟩ , stopPos := ⟨ st.index + keyword.length ⟩ }
+  if sub.beq keyword.toSubstring then
     set { st with
       index := st.index + keyword.length,
       columnNumber := st.columnNumber + keyword.length
@@ -109,48 +105,35 @@ def parseItem (keyword : String) : PState Unit := do
     throw <| ← error keyword
 
 def is (keyword : String) : PState Bool := do
+  skip
   let st ← get
-  let mut index := st.index
-  for i in [st.index:st.stop] do
-    if let some c := st.source[i]? then
-      if c = ' ' || c = '\t' || c = '\n' then index := index + 1
-      else break
-    else return false
-  let mut valid := true
-  for i in [:keyword.length] do
-    if let some c := st.source[index + i]? then
-      if c != keyword.get! ⟨ i ⟩ then valid := false
-    else return false
-  return valid
+  let sub : Substring := { str := st.source, startPos := ⟨ st.index ⟩ , stopPos := ⟨ st.index + keyword.length ⟩ }
+  return sub.beq keyword.toSubstring
 
 def isParse (keyword : String) : PState Bool := do
+  skip
   let st ← get
-  let mut index := st.index
-  for i in [st.index:st.stop] do
-    if let some c := st.source[i]? then
-      if c = ' ' || c = '\t' || c = '\n' then index := index + 1
-      else break
-    else return false
-  let mut valid := true
-  for i in [:keyword.length] do
-    if let some c := st.source[index + i]? then
-      if c != keyword.get! ⟨ i ⟩ then valid := false
-    else return false
-  if valid then parseItem keyword
-  return valid
+  let sub : Substring := { str := st.source, startPos := ⟨ st.index ⟩ , stopPos := ⟨ st.index + keyword.length ⟩ }
+  if sub.beq keyword.toSubstring then
+      set { st with
+        index := st.index + keyword.length,
+        columnNumber := st.columnNumber + keyword.length
+        }
+      return true
+    else
+      return false
 
 def isDigit : PState Bool := do
+  skip
   let st ← get
-  if let some c := st.source[st.index]? then
-    return c.isDigit
-  else return false
+  let c := st.source.get! ⟨ st.index ⟩
+  return c.isDigit
 
 def isChar (c : Char) : PState Bool := do
   skip
   let st ← get
-  if let some c' := st.source[st.index]? then
-    return c = c'
-  else return false
+  let c' := st.source.get! ⟨ st.index ⟩
+  return c = c'
 
 def parseItems (keywords : List String) : PState Unit := do
   for i in [:keywords.length] do
@@ -161,7 +144,8 @@ def parseId : PState String := do
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in parseId"
+    --let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in parseId"
+    let c := st.source.get! ⟨ i ⟩
     if c.isAlphanum || c = '_' || c = '.' then token := token.push c
     else break
   if token.length != 0 then
@@ -178,7 +162,8 @@ def parseDecimal : PState Nat := do
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in parseDecimal"
+    --let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in parseDecimal"
+    let c := st.source.get! ⟨ i ⟩
     if c.isDigit then token := token.push c
     else break
   if token.length != 0 then
@@ -206,7 +191,8 @@ def parseHexaDecimal : PState Nat := do
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in parseDecimal"
+    --let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in parseDecimal"
+    let c := st.source.get! ⟨ i ⟩
     if isHexDigit c then token := token.push c
     else break
   if token.length != 0 then
@@ -225,7 +211,8 @@ def parseString : PState String := do
   let mut token := ""
   let mut escaped := false
   for i in [st.index:st.stop] do
-    let c := if let some c := st.source[i]? then c else panic s!"Indexing error in parseString"
+    --let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in parseString"
+    let c := st.source.get! ⟨ i ⟩
     if c = '"' then
       if escaped then
         token := token.push c
