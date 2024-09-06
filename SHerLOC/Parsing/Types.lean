@@ -42,48 +42,11 @@ def parseTensorElementType : PState TensorElementType := do
   if let some r ← tryParseFloatType then pop "parseTensorElementType"; return TensorElementType.floatType r
   throw <| ← error "TensorElementType"
 
-def parseQuantizationStorageType : PState IntegerType := do
-  push "parseQuantizationStorageType"
-  let r ← parseIntegerType
-  pop "parseQuantizationStorageType"
-  return r
-
-def parseQuantizationStorageMinMax : PState (IntegerConstant × IntegerConstant) := do
-  push "parseQuantizationStorageMinMax"
-  let min ← parseIntegerConstant
-  let max ← parseIntegerConstant
-  pop "parseQuantizationStorageMinMax"
-  return (min,max)
-
-def parseQuantizationExpressedType : PState FloatType := do
-  push "parseQuantizationExpressedType"
-  let r ← parseFloatType
-  pop "parseQuantizationExpressedType"
-  return r
-
-def parseQuantizationDimension : PState IntegerConstant := do
-  push "parseQuantizationDimension"
-  let r ← parseIntegerConstant
-  pop "parseQuantizationDimension"
-  return r
-
-def parseQuantizationScale : PState FloatConstant := do
-  push "parseQuantizationScale"
-  let r ← parseFloatConstant
-  pop "parseQuantizationScale"
-  return r
-
-def parseQuantizationZeroPoint : PState IntegerConstant := do
-  push "parseQuantizationZeroPoint"
-  let r ← parseIntegerConstant
-  pop "parseQuantizationZeroPoint"
-  return r
-
 def parseQuantizationParameter : PState QuantizationParameter := do
   push "parseQuantizationParameter"
-  let quantizationScale ← parseQuantizationScale
+  let quantizationScale ← parseFloatLiteral
   parseItem ":"
-  let quantizationZeroPoint ← parseQuantizationZeroPoint
+  let quantizationZeroPoint ← parseIntegerLiteral
   let parseResult :=
     { quantizationScale := quantizationScale,
       quantizationZeroPoint := quantizationZeroPoint
@@ -106,15 +69,19 @@ def parseQuantizedTensorElementType : PState QuantizedTensorElementType := do
   push "parseQuantizedTensorElementType"
   parseItem "!quant.uniform"
   parseItem "<"
-  let quantizationStorageType ← parseQuantizationStorageType
+  let quantizationStorageType ← parseIntegerType
   let mut quantizationStorageMinMax := none
-  if ← is "<" then
-    quantizationStorageMinMax := some <| ← parseQuantizationStorageMinMax
+  if ← isParse "<" then
+    let min ← parseIntegerConstant
+    parseItem ":"
+    let max ← parseIntegerConstant
+    quantizationStorageMinMax := some (min,max)
+    parseItem ">"
   parseItem ":"
-  let quantizationExpressedType ← parseQuantizationExpressedType
+  let quantizationExpressedType ← parseFloatType
   let mut quantizationDimension := none
-  if ← is ":" then
-    quantizationDimension := some <| ← parseQuantizationDimension
+  if ← isParse ":" then
+    quantizationDimension ← parseIntegerLiteral
   parseItem ","
   let quantizationParameters ← parseQuantizationParameters
   parseItem ">"

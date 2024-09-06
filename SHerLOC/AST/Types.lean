@@ -25,15 +25,15 @@ inductive TensorElementType where
   deriving Repr, Inhabited, Nonempty
 
 structure QuantizationParameter where
-  quantizationScale : FloatConstant
-  quantizationZeroPoint: IntegerConstant
+  quantizationScale : FloatLiteral
+  quantizationZeroPoint: IntegerLiteral
   deriving Repr, Inhabited, Nonempty
 
 structure QuantizedTensorElementType where
   quantizationStorageType : IntegerType
   quantizationStorageMinMax : Option (IntegerConstant × IntegerConstant)
   quantizationExpressedType : FloatType
-  quantizationDimension : Option IntegerConstant
+  quantizationDimension : Option IntegerLiteral
   quantizationParameters : List QuantizationParameter
   deriving Repr, Inhabited, Nonempty
 

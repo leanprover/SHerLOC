@@ -61,9 +61,11 @@ mutual
 partial def parseInputFunc : PState InputFunc := do
   push "parseInputFunc"
   parseItem "{"
-  discard <| parseUnusedId
-  let funcInputs ← parseInputFuncInputs
-  parseItem ":"
+  let mut funcInputs : List FuncInput := []
+  if ← is "^" then
+    discard <| parseUnusedId
+    funcInputs ← parseInputFuncInputs
+    parseItem ":"
   let body ← parseInputFuncBody
   parseItem "}"
   pop "parseInputFunc"
