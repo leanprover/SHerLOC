@@ -8,13 +8,10 @@ import SHerLOC.Parsing.Parser
 
 namespace StableHLO
 
-def tryParseBooleanLiteral : PState (Option BooleanLiteral) := do
-  push "tryParseBooleanLiteral"
-  let mut r : Option BooleanLiteral := none
-  if ← isParse "true" then r := some BooleanLiteral.true
-  if ← isParse "false" then r := some BooleanLiteral.false
-  pop "tryParseBooleanLiteral"
-  return r
+def parseBooleanLiteral : PState BooleanLiteral := do
+  if ← isParse "true" then return BooleanLiteral.true
+  if ← isParse "false" then return BooleanLiteral.false
+  throw <| ← error "Boolean literal"
 
 def parseIntegerLiteral : PState IntegerLiteral := do
   push "parseIntegerLiteral"
@@ -75,11 +72,14 @@ def parseComplexLiteral : PState ComplexLiteral := do
   return parseResult
 
 def parseElementLiteral : PState ElementLiteral := do
-  push "parseElementLiteral"
-  if ← is "(" then pop "parseElementLiteral" ; return ElementLiteral.complexLiteral <| ← parseComplexLiteral
-  if let some r ← tryParseBooleanLiteral then pop "parseElementLiteral" ; return ElementLiteral.booleanLiteral  r
-  pop "parseElementLiteral"
-  return ElementLiteral.floatLiteral <| ← parseFloatLiteral
+  skip
+  if (← isDigit) || (← is "+") || (← is "-") then
+    return ElementLiteral.floatLiteral <| ← parseFloatLiteral
+  if (← is "t") || (← is "f") then
+    return ElementLiteral.booleanLiteral <| ← parseBooleanLiteral
+  if (← is "(") then
+    return ElementLiteral.complexLiteral <| ← parseComplexLiteral
+  throw <| ← error "Element literal"
 
 def parseDenseElements (closingMark : String) : PState (List ElementLiteral) := do
   push "parseDenseElements"
@@ -240,13 +240,17 @@ def parseArrayLiteral : PState (List IntegerLiteral) := do
 
 def parseLiteral : PState Literal := do
   skip
-  if (← isDigit) || (← is "+") || (← is "-") || (← is "t") || (← is "f") || (← is "(") then
-    return Literal.element <| ← parseElementLiteral
-  if ← is "dense" then
+  if (← isDigit) || (← isChar '+') || (← isChar '-') then
+    return Literal.element <| ElementLiteral.floatLiteral <| ← parseFloatLiteral
+  if ← isChar 'd' then
     return Literal.tensor <| ← parseTensorLiteral
-  if ← is "\"" then
+  if (← isChar 't') || (← isChar 'f') then
+    return Literal.element <| ElementLiteral.booleanLiteral <| ← parseBooleanLiteral
+  if (← isChar '(') then
+    return Literal.element <| ElementLiteral.complexLiteral <| ← parseComplexLiteral
+  if ← isChar '"' then
     return Literal.string <| ← parseStringLiteral
-  if ← is "array" then
+  if ← isChar 'a' then
     return Literal.array <| ← parseArrayLiteral
 
   if ← isChar '#' then {
