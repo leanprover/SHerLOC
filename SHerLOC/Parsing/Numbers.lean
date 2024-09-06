@@ -11,18 +11,20 @@ namespace StableHLO
 def tryParseIntegerType : PState (Option IntegerType) := do
   push "tryParseIntegerType"
   let mut r : Option IntegerType := none
-  if ← isParse "i2" then r := some { sign := Signedness.signed , size := IntegerSize.b2 }
-  if ← isParse "i4" then r := some { sign := Signedness.signed , size := IntegerSize.b4 }
-  if ← isParse "i8" then r := some { sign := Signedness.signed , size := IntegerSize.b8 }
-  if ← isParse "i16" then r := some { sign := Signedness.signed , size := IntegerSize.b16 }
-  if ← isParse "i32" then r := some { sign := Signedness.signed , size := IntegerSize.b32 }
-  if ← isParse "i64" then r := some { sign := Signedness.signed , size := IntegerSize.b64 }
+  if ← isChar 'i' then {
+    if ← isParse "i32" then r := some { sign := Signedness.signed , size := IntegerSize.b32 }
+    if ← isParse "i64" then r := some { sign := Signedness.signed , size := IntegerSize.b64 }
+    if ← isParse "i2" then r := some { sign := Signedness.signed , size := IntegerSize.b2 }
+    if ← isParse "i4" then r := some { sign := Signedness.signed , size := IntegerSize.b4 }
+    if ← isParse "i8" then r := some { sign := Signedness.signed , size := IntegerSize.b8 }
+    if ← isParse "i16" then r := some { sign := Signedness.signed , size := IntegerSize.b16 }
+  }
+  if ← isParse "ui32" then r := some { sign := Signedness.unsigned , size := IntegerSize.b32 }
+  if ← isParse "ui64" then r := some { sign := Signedness.unsigned , size := IntegerSize.b64 }
   if ← isParse "ui2" then r := some { sign := Signedness.unsigned , size := IntegerSize.b2 }
   if ← isParse "ui4" then r := some { sign := Signedness.unsigned , size := IntegerSize.b4 }
   if ← isParse "ui8" then r := some { sign := Signedness.unsigned , size := IntegerSize.b8 }
   if ← isParse "ui16" then r := some { sign := Signedness.unsigned , size := IntegerSize.b16 }
-  if ← isParse "ui32" then r := some { sign := Signedness.unsigned , size := IntegerSize.b32 }
-  if ← isParse "ui64" then r := some { sign := Signedness.unsigned , size := IntegerSize.b64 }
   pop "tryParseIntegerType"
   return r
 
@@ -59,15 +61,17 @@ def parseIntegerConstant : PState IntegerConstant := do
 def tryParseFloatType : PState (Option FloatType) := do
   push "tryParseFloatType"
   let mut r : Option FloatType := none
-  if ← isParse "f8E4M3B11FNUZ" then r := some FloatType.f8E4M3B11FNUZ
-  if ← isParse "f8E4M3FNUZ" then r := some FloatType.f8E4M3FNUZ
-  if ← isParse "f8E4M3FN" then r := some FloatType.f8E4M3FN
-  if ← isParse "f8E5M2FNUZ" then r := some FloatType.f8E5M2FNUZ
-  if ← isParse "f8E5M2" then r := some FloatType.f8E5M2
+  if ← isChar 'f' then {
+    if ← isParse "f16" then r := some FloatType.f16
+    if ← isParse "f32" then r := some FloatType.f32
+    if ← isParse "f64" then r := some FloatType.f64
+    if ← isParse "f8E4M3B11FNUZ" then r := some FloatType.f8E4M3B11FNUZ
+    if ← isParse "f8E4M3FNUZ" then r := some FloatType.f8E4M3FNUZ
+    if ← isParse "f8E4M3FN" then r := some FloatType.f8E4M3FN
+    if ← isParse "f8E5M2FNUZ" then r := some FloatType.f8E5M2FNUZ
+    if ← isParse "f8E5M2" then r := some FloatType.f8E5M2
+  }
   if ← isParse "bf16" then r := some FloatType.bf16
-  if ← isParse "f16" then r := some FloatType.f16
-  if ← isParse "f32" then r := some FloatType.f32
-  if ← isParse "f64" then r := some FloatType.f64
   pop "tryParseFloatType"
   return r
 

@@ -37,22 +37,51 @@ def parseFunctionDictionaryAttributes : PState (String × FunctionType × (List 
   let mut functionVisibility : Option String := none
   let mut functionResultAttributes : List (List Attribute) := []
   let mut functionArgAttributes : List (List Attribute) := []
+  let mut functionNameTodo : Bool := true
+  let mut functionTypeTodo : Bool := true
+  let mut functionVisibilityTodo : Bool := true
+  let mut functionResultAttributesTodo : Bool := true
+  let mut functionArgAttributesTodo : Bool := true
+  let mut count := 0
+
   for _ in [:5] do
-    if let some name ← tryParseDEntrySymName then
-      functionName := name
-      if ← is "," then parseItem "," else break
-    if let some t ← tryParseDEntryFunctionType then
-      functionType := t
-      if ← is "," then parseItem "," else break
-    if let some res ← tryParseDEntryResultAttributes then
-      functionResultAttributes := res
-      if ← is "," then parseItem "," else break
-    if let some res ← tryParseDEntryArgAttributes then
-      functionArgAttributes := res
-      if ← is "," then parseItem "," else break
-    if let some visibility ← tryParseDEntrySymVisibility then
-      functionVisibility := visibility
-      if ← is "," then parseItem "," else break
+    if functionNameTodo then
+      if let some name ← tryParseDEntrySymName then
+        functionName := name
+        functionNameTodo := false
+        count := count + 1
+        if ← is "," then parseItem "," else break
+
+    if functionTypeTodo then
+      if let some t ← tryParseDEntryFunctionType then
+        functionType := t
+        functionTypeTodo := false
+        count := count + 1
+        if ← is "," then parseItem "," else break
+
+    if functionResultAttributesTodo then
+      if let some res ← tryParseDEntryResultAttributes then
+        functionResultAttributes := res
+        functionResultAttributesTodo := false
+        count := count + 1
+        if ← is "," then parseItem "," else break
+
+    if functionArgAttributesTodo then
+      if let some res ← tryParseDEntryArgAttributes then
+        functionArgAttributes := res
+        functionArgAttributesTodo := false
+        count := count + 1
+        if ← is "," then parseItem "," else break
+
+    if functionVisibilityTodo then
+      if let some visibility ← tryParseDEntrySymVisibility then
+        functionVisibility := visibility
+        functionVisibilityTodo := false
+        count := count + 1
+        if ← is "," then parseItem "," else break
+
+    if count = 5 then break
+
   if let some name := functionName then
     if let some typ := functionType then
       return (name, typ, functionArgAttributes, functionResultAttributes)
@@ -73,7 +102,7 @@ def parseFunction : PState Function := do
     discard <| parseUnusedId
     funcInputs ← parseInputFuncInputs
     parseItem ":"
-  let operations ← parseListAux "}" none parseOperation
+  let operations ← parseListAuxNoSep "}" parseOperation []
   let body : InputFunc := InputFunc.mk funcInputs operations
   parseItem "})"
   parseItems [":","(",")","->","(",")"]
@@ -83,7 +112,7 @@ def parseFunction : PState Function := do
 
 def parseFunctions : PState (List Function) := do
   push "parseFunctions"
-  let r ← parseList "{" "}" none parseFunction
+  let r ← parseListNoSep "{" "}" parseFunction
   pop "parseFunctions"
   return r
 

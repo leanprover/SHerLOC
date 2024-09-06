@@ -45,14 +45,14 @@ def parseElementLiteral : PState ElementLiteral := do
 
 def parseDenseElements (closingMark : String) : PState (List ElementLiteral) := do
   push "parseDenseElements"
-  let r ← parseListAux closingMark (some ",") parseElementLiteral
+  let r ← parseListAux closingMark "," parseElementLiteral
   pop "parseDenseElements"
   return r
 
 partial def parseDenseLiteral : PState DenseLiteral := do
   push "parseDenseLiteral"
   if ← is "[" then
-    let denseDimension ← parseList "[" "]" (some ",") parseDenseLiteral
+    let denseDimension ← parseList "[" "]" "," parseDenseLiteral
     pop "parseDenseLiteral"
     return DenseLiteral.denseDimension denseDimension
   else
@@ -232,17 +232,22 @@ def parseConstant : PState Constant := do
   if ← is "(" then pop "parseConstant" ; return Constant.complexConstant <| ← parseComplexConstant
   if ← is "dense" then pop "parseConstant" ; return Constant.tensorConstant <| ← parseTensorConstant
   if ← is "array" then pop "parseConstant" ; return Constant.tensorConstant <| ← parseArrayConstant
-  if ← isParse "#stablehlo.conv" then flyOver "<" ">"; pop "parseConstant" ; return Constant.special
-  if ← isParse "#stablehlo.dot_algorithm" then flyOver "<" ">"; pop "parseConstant" ; return Constant.special
-  if ← isParse "#stablehlo.dot" then flyOver "<" ">"; pop "parseConstant" ; return Constant.special
-  if ← isParse "#stablehlo.channel_handle" then flyOver "<" ">"; pop "parseConstant" ; return Constant.special
-  if ← isParse "#stablehlo.scatter" then flyOver "<" ">"; pop "parseConstant" ; return Constant.special
-  if ← isParse "#stablehlo.gather" then flyOver "<" ">"; pop "parseConstant" ; return Constant.special
 
+  if ← isChar '#' then {
+    if ← isParse "#stablehlo.conv" then flyOver "<" ">"; pop "parseConstant" ; return Constant.special
+    if ← isParse "#stablehlo.dot_algorithm" then flyOver "<" ">"; pop "parseConstant" ; return Constant.special
+    if ← isParse "#stablehlo.dot" then flyOver "<" ">"; pop "parseConstant" ; return Constant.special
+    if ← isParse "#stablehlo.channel_handle" then flyOver "<" ">"; pop "parseConstant" ; return Constant.special
+    if ← isParse "#stablehlo.scatter" then flyOver "<" ">"; pop "parseConstant" ; return Constant.special
+    if ← isParse "#stablehlo.gather" then flyOver "<" ">"; pop "parseConstant" ; return Constant.special
+    if ← is "#stablehlo" then pop "parseConstant" ; return Constant.enumConstant <| ← parseEnumLiteral
+  }
 
-  if ← is "#stablehlo" then pop "parseConstant" ; return Constant.enumConstant <| ← parseEnumLiteral
-  if ← is "[[" then flyOver "[[" "]]"; pop "parseConstant" ; return Constant.special
-  if ← is "[" then flyOver "[" "]"; pop "parseConstant" ; return Constant.special
+  if ← isChar '[' then {
+    if ← is "[[" then flyOver "[[" "]]"; pop "parseConstant" ; return Constant.special
+    if ← is "[" then flyOver "[" "]"; pop "parseConstant" ; return Constant.special
+  }
+
   let r ← parseNumberConstant
   pop "parseConstant"
   return Constant.numberConsant <| r

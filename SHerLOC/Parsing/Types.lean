@@ -94,7 +94,7 @@ def parseQuantizationParameter : PState QuantizationParameter := do
 def parseQuantizationParameters : PState (List QuantizationParameter) := do
   push "parseQuantizationParameters"
   if ← is "{" then
-    let quantizationParameters ← parseList "{" "}" (some ",") parseQuantizationParameter
+    let quantizationParameters ← parseList "{" "}" "," parseQuantizationParameter
     pop "parseQuantizationParameters"
     return quantizationParameters
   else
@@ -161,7 +161,7 @@ mutual
 partial def parseTupleType : PState ValueType := do
   push "parseTupleType"
   parseItem "tuple"
-  let TupleElementTypes ← parseList "<" ">" (some ",") parseValueType
+  let TupleElementTypes ← parseList "<" ">" "," parseValueType
   pop "parseTupleType"
   return ValueType.tupleType TupleElementTypes
 
@@ -194,7 +194,7 @@ def parseValueTypesOutput : PState (List ValueType) := do
 
 def parseValueTypes : PState (List ValueType) := do
   push "parseValueTypes"
-  let r ← parseList "(" ")" (some ",") parseValueType
+  let r ← parseList "(" ")" "," parseValueType
   pop "parseValueTypes"
   return r
 

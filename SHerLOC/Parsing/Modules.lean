@@ -41,7 +41,7 @@ def parseModules : PState (List Module) := do
   else
     parseItems ["(","{"]
     if ← is "\"builtin.module\"" then
-      r ← parseListAux "})" none parseModule
+      r ← parseListAuxNoSep "})" parseModule []
     else
       reset
       r := [← parseModule]

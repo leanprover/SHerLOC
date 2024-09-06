@@ -145,6 +145,13 @@ def isDigit : PState Bool := do
     return c.isDigit
   else return false
 
+def isChar (c : Char) : PState Bool := do
+  skip
+  let st ← get
+  if let some c' := st.source[st.index]? then
+    return c = c'
+  else return false
+
 def parseItems (keywords : List String) : PState Unit := do
   for i in [:keywords.length] do
     parseItem <| keywords.get! i
@@ -242,7 +249,6 @@ def flyOver (start stop : String) : PState Unit := do
   skip
   parseItem start
   let st ← get
-  let mut token : String := ""
   for _ in [st.index:st.stop] do
     let st ← get
     if ← isParse "->" then continue
@@ -276,28 +282,39 @@ def pop (parser : String) : PState Unit := do
     else panic! s!"Trace mismatch: expected {parser} but found {head}"
   else panic! "More pops than pushes, some parser is missing its push"
 
-partial def parseListOneorMoreAux (separator : String) (parse : PState T) : PState (List T) := do
+partial def parseListOneorMoreAux (separator : String) (parse : PState T) (acc : List T) : PState (List T) := do
   if ← isParse separator then
-    let head ← parse
-    let tail ← parseListOneorMoreAux separator parse
-    return head :: tail
-  else return []
+    parseListOneorMoreAux separator parse ((← parse) :: acc)
+  else return acc.reverse
 
 partial def parseListOneorMore (separator : String) (parse : PState T) : PState (List T) := do
   let head ← parse
-  let tail ← parseListOneorMoreAux separator parse
+  let tail ← parseListOneorMoreAux separator parse []
   return head :: tail
 
-partial def parseListAux (closingMark : String) (separator : Option String) (parse : PState T) : PState (List T) := do
-  if ← is closingMark then return []
-  if let some sep := separator then if ← isParse sep then return ← parseListAux closingMark separator parse
-  let attr ← parse
-  let attrs ← parseListAux closingMark separator parse
-  return attr :: attrs
+partial def parseListAux' (closingMark : String) (separator : String) (parse : PState T) (acc : List T) : PState (List T) := do
+  if ← is closingMark then return acc.reverse
+  if ← isParse separator then
+    parseListAux' closingMark separator parse ((← parse) :: acc)
+  else
+    parseListAux' closingMark separator parse ((← parse) :: acc)
 
-def parseList (openingMark closingMark : String) (separator : Option String) (parse : PState T) : PState (List T) := do
+partial def parseListAux (closingMark : String) (separator : String) (parse : PState T) : PState (List T) := do
+  parseListAux' closingMark separator parse []
+
+def parseList (openingMark closingMark : String) (separator : String) (parse : PState T) : PState (List T) := do
   parseItem openingMark
   let attrs ← parseListAux closingMark separator parse
+  parseItem closingMark
+  return attrs
+
+partial def parseListAuxNoSep (closingMark : String) (parse : PState T) (acc : List T) : PState (List T) := do
+  if ← is closingMark then return acc.reverse
+  parseListAuxNoSep closingMark parse ((← parse) :: acc)
+
+def parseListNoSep (openingMark closingMark : String) (parse : PState T) : PState (List T) := do
+  parseItem openingMark
+  let attrs ← parseListAuxNoSep closingMark parse []
   parseItem closingMark
   return attrs
 

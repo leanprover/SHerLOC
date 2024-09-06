@@ -25,7 +25,7 @@ def parseAttribute : PState Attribute := do
 
 def parseAttributes : PState (List Attribute) := do
   push "parseAttributes"
-  let r ← parseList "{" "}" (some ",") parseAttribute
+  let r ← parseList "{" "}" "," parseAttribute
   pop "parseAttributes"
   return r
 
