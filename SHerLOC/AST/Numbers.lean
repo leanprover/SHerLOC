@@ -3,6 +3,7 @@ Copyright (c) 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jean-Baptiste Tristan
 -/
+import SHerLOC.AST.Identifiers
 
 /-!
 # Numbers
@@ -131,14 +132,30 @@ inductive EnumLiteral where
   | transposeA (enum : TransposeA)
   deriving Repr, Inhabited, Nonempty
 
+inductive ArrayLiteral where
+  | array64 (literal : List IntegerLiteral)
+  | array1 (literal : List BooleanLiteral)
+  deriving Repr, Inhabited, Nonempty
+
+structure ChannelHandle where
+  handle : Nat
+  typ : Nat
+  deriving Repr, Inhabited, Nonempty
+
 inductive Literal where
   | enum (literal : EnumLiteral)
   | element (literal : ElementLiteral)
   | tensor (literal : TensorLiteral)
   | string (literal : String)
+
   | use_global_device_ids
-  | array (literal : List IntegerLiteral)
+  | array (literal : ArrayLiteral)
   | special
+  | channelHandle (literal : ChannelHandle)
+  | experiment1 (literal : List FuncId)
+  | experiment2 (literal : List (List FuncId))
+  | experiment3 (literal : List EnumLiteral)
+  | func (literal : FuncId)
   deriving Repr, Inhabited, Nonempty
 
 end StableHLO

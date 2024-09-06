@@ -5,6 +5,7 @@ Authors: Jean-Baptiste Tristan
 -/
 import SHerLOC.AST.Basic
 import SHerLOC.Parsing.Parser
+import SHerLOC.Parsing.Identifiers
 
 namespace StableHLO
 
@@ -218,7 +219,7 @@ def parseEnumLiteral : PState EnumLiteral := do
   let mut r := none
   if ← isParse "comparison_direction" then r := EnumLiteral.comparisonDirection <| ← parseComparisonDirection
   if ← isParse "comparison_type" then r := EnumLiteral.compareType <| ← parseCompareType
-  if ← isParse "precision_config" then r := EnumLiteral.precisionConfig <| ← parsePrecisionConfig
+  if ← isParse "precision" then r := EnumLiteral.precisionConfig <| ← parsePrecisionConfig
   if ← isParse "fft_type" then r := EnumLiteral.fftType <| ← parseFftType
   if ← isParse "channel_type" then r := EnumLiteral.channelType <| ← parseChannelType
   if ← isParse "rng_distribution" then r := EnumLiteral.rngDistribution <| ← parseRngDistribution
@@ -230,13 +231,40 @@ def parseEnumLiteral : PState EnumLiteral := do
     return res
   else throw <| ← error "enumeration"
 
-def parseArrayLiteral : PState (List IntegerLiteral) := do
-  parseItems ["array", "<", "i64"]
-  let mut r := []
-  if ← isParse ":" then
-    r ← parseListAux ">" "," parseIntegerLiteral
+def parseArrayLiteral : PState ArrayLiteral := do
+  parseItems ["array", "<"]
+  if ← isParse "i64" then
+    let mut r := []
+    if ← isParse ":" then
+      r ← parseListAux ">" "," parseIntegerLiteral
+    parseItem ">"
+    return ArrayLiteral.array64 r
+  if ← isParse "i1" then
+    let mut r := []
+    if ← isParse ":" then
+      r ← parseListAux ">" "," parseBooleanLiteral
+    parseItem ">"
+    return ArrayLiteral.array1 r
+  throw <| ← error "array literal"
+
+def parseExperiment1 : PState (List FuncId) := do
+  parseList "[" "]" "," parseFuncId
+
+def parseExperiment2 : PState (List (List FuncId)) := do
+  parseList "[" "]" "," parseExperiment1
+
+def parseExperiment3 : PState (List EnumLiteral) := do
+  parseList "[" "]" "," parseEnumLiteral
+
+def parseChannelHandle : PState (ChannelHandle) := do
+  parseItems ["<"]
+  parseItems ["handle", "="]
+  let handle ← parseDecimal
+  parseItem ","
+  parseItems ["type", "="]
+  let typ ← parseDecimal
   parseItem ">"
-  return r
+  return { handle := handle, typ := typ }
 
 def parseLiteral : PState Literal := do
   skip
@@ -257,16 +285,27 @@ def parseLiteral : PState Literal := do
     if ← isParse "#stablehlo.conv" then flyOver "<" ">"; return Literal.special
     if ← isParse "#stablehlo.dot_algorithm" then flyOver "<" ">"; return Literal.special
     if ← isParse "#stablehlo.dot" then flyOver "<" ">"; return Literal.special
-    if ← isParse "#stablehlo.channel_handle" then flyOver "<" ">"; return Literal.special
+    if ← isParse "#stablehlo.channel_handle" then
+      return Literal.channelHandle <| ← parseChannelHandle
     if ← isParse "#stablehlo.scatter" then flyOver "<" ">"; return Literal.special
     if ← isParse "#stablehlo.gather" then flyOver "<" ">"; return Literal.special
     if ← is "#stablehlo" then return Literal.enum <| ← parseEnumLiteral
   }
 
   if ← isChar '[' then {
-    if ← is "[[" then flyOver "[[" "]]"; return Literal.special
-    if ← is "[" then flyOver "[" "]"; return Literal.special
+    if ← is "[[" then
+      return Literal.experiment2 <| ← parseExperiment2
+    if ← is "[#" then
+      return Literal.experiment3 <| ← parseExperiment3
+    if ← is "[" then
+      return Literal.experiment1 <| ← parseExperiment1
   }
+
+  if ← isChar '{' then
+    flyOver "{" "}"; return Literal.special
+
+  if ← isChar '@' then
+    return Literal.func <| ← parseFuncId
 
   throw <| ← error "literal"
 
