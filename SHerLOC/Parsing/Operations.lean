@@ -105,6 +105,8 @@ partial def parseOperation : PState Operation := do
   let mut opInputFuncs := []
   if ← is "(" then
     opInputFuncs ← parseOpInputFuncs
+  if ← is "{"  then
+    opInputAttrs := opInputAttrs ++ (← parseAttributes)
   parseItem ":"
   let functiontype ← parseFunctionType
   let operation := Operation.stablehlo opName opInputValues opInputFuncs opInputAttrs opOutputs functiontype
