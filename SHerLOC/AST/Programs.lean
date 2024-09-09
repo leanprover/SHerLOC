@@ -12,7 +12,7 @@ import SHerLOC.AST.Modules
 
 namespace StableHLO
 
-def Program := Module
+def Program := List Module
   deriving Repr, Inhabited, Nonempty
 
 end StableHLO

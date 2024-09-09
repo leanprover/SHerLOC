@@ -12,6 +12,29 @@ import SHerLOC.AST.Numbers
 
 namespace StableHLO
 
+structure IntegerType where
+  sign : Signedness
+  size : IntegerSize
+  deriving Repr, Inhabited, Nonempty
+
+inductive FloatType where
+  | f8E4M3FN
+  | f8E5M2
+  | f8E4M3FNUZ
+  | f8E5M2FNUZ
+  | f8E4M3B11FNUZ
+  | bf16
+  | f16
+  | f32
+  | f64
+  | tf32
+  deriving Repr, Inhabited, Nonempty
+
+inductive NumberType where
+  | integerType (type : IntegerType)
+  | floatType (type: FloatType)
+  deriving Repr, Inhabited, Nonempty
+
 inductive ComplexType where
   | f32
   | f64
@@ -25,20 +48,18 @@ inductive TensorElementType where
   deriving Repr, Inhabited, Nonempty
 
 structure QuantizationParameter where
-  quantizationScale : FloatConstant
-  quantizationZeroPoint: IntegerConstant
+  quantizationScale : FloatLiteral
+  quantizationZeroPoint: IntegerLiteral
   deriving Repr, Inhabited, Nonempty
 
 structure QuantizedTensorElementType where
   quantizationStorageType : IntegerType
-  quantizationStorageMinMax : Option (IntegerConstant × IntegerConstant)
+  quantizationStorageMinMax : Option (IntegerLiteral × IntegerLiteral)
   quantizationExpressedType : FloatType
-  quantizationDimension : Option IntegerConstant
+  quantizationDimension : Option IntegerLiteral
   quantizationParameters : List QuantizationParameter
   deriving Repr, Inhabited, Nonempty
 
--- Here I deviate from the spec because it allows me to keep
--- the grammer LL(1)
 inductive TensorElementTypeGen where
   | classic (t : TensorElementType)
   | quantized (t : QuantizedTensorElementType)
@@ -55,9 +76,9 @@ inductive ValueType where
   | tupleType (elements : List ValueType)
   deriving Repr, Inhabited, Nonempty
 
-inductive FunctionType where
-  | short (range : List ValueType)
-  | long (domain range : List ValueType)
+structure FunctionType where
+  domain : List ValueType
+  range : List ValueType
   deriving Repr, Inhabited, Nonempty
 
 inductive NonValueType where

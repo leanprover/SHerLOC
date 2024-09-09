@@ -15,6 +15,28 @@ def parseValueId : PState String := do
   pop "parseValueId"
   return r
 
+def parseValueIdRes : PState String := do
+  push "parseValueIdRes"
+  let r ← parseValueId
+  let mut r' := ""
+  if ← isParse ":" then
+    r' ← parseId
+    r' := ":" ++ r'
+  let r := r ++ r'
+  pop "parseValueIdRes"
+  return r
+
+def parseValueIdOpArg : PState String := do
+  push "parseValueOpArg"
+  let r ← parseValueId
+  let mut r' := ""
+  if ← isParse "#" then
+    r' ← parseId
+    r' := "#" ++ r'
+  let r := r ++ r'
+  pop "parseValueOpArg"
+  return r
+
 def parseFuncId : PState String := do
   push "parseFuncId"
   parseItem "@"

@@ -9,12 +9,64 @@ import SHerLOC.Parsing.Numbers
 
 namespace StableHLO
 
+def tryParseIntegerType : PState (Option IntegerType) := do
+  push "tryParseIntegerType"
+  let mut r : Option IntegerType := none
+  if ← isChar 'i' then {
+    if ← isParse "i32" then r := some { sign := Signedness.signed , size := IntegerSize.b32 }
+    if ← isParse "i64" then r := some { sign := Signedness.signed , size := IntegerSize.b64 }
+    if ← isParse "i2" then r := some { sign := Signedness.signed , size := IntegerSize.b2 }
+    if ← isParse "i4" then r := some { sign := Signedness.signed , size := IntegerSize.b4 }
+    if ← isParse "i8" then r := some { sign := Signedness.signed , size := IntegerSize.b8 }
+    if ← isParse "i16" then r := some { sign := Signedness.signed , size := IntegerSize.b16 }
+  }
+  if ← isParse "ui32" then r := some { sign := Signedness.unsigned , size := IntegerSize.b32 }
+  if ← isParse "ui64" then r := some { sign := Signedness.unsigned , size := IntegerSize.b64 }
+  if ← isParse "ui2" then r := some { sign := Signedness.unsigned , size := IntegerSize.b2 }
+  if ← isParse "ui4" then r := some { sign := Signedness.unsigned , size := IntegerSize.b4 }
+  if ← isParse "ui8" then r := some { sign := Signedness.unsigned , size := IntegerSize.b8 }
+  if ← isParse "ui16" then r := some { sign := Signedness.unsigned , size := IntegerSize.b16 }
+  pop "tryParseIntegerType"
+  return r
+
+def parseIntegerType : PState IntegerType := do
+  push "parseIntegerType"
+  if let some r ← tryParseIntegerType then pop "parseIntegerType" ; return r
+  else throw <| ← error "Integer type"
+
+def tryParseFloatType : PState (Option FloatType) := do
+  push "tryParseFloatType"
+  let mut r : Option FloatType := none
+  if ← isChar 'f' then {
+    if ← isParse "f16" then r := some FloatType.f16
+    if ← isParse "f32" then r := some FloatType.f32
+    if ← isParse "f64" then r := some FloatType.f64
+    if ← isParse "f8E4M3B11FNUZ" then r := some FloatType.f8E4M3B11FNUZ
+    if ← isParse "f8E4M3FNUZ" then r := some FloatType.f8E4M3FNUZ
+    if ← isParse "f8E4M3FN" then r := some FloatType.f8E4M3FN
+    if ← isParse "f8E5M2FNUZ" then r := some FloatType.f8E5M2FNUZ
+    if ← isParse "f8E5M2" then r := some FloatType.f8E5M2
+  }
+  if ← isParse "bf16" then r := some FloatType.bf16
+  pop "tryParseFloatType"
+  return r
+
+def parseFloatType : PState FloatType := do
+  push "parseFloatType"
+  if let some r ← tryParseFloatType then pop "parseFloatType"; return r
+  else throw <| ← error "Float type"
+
+def parseNumberType : PState NumberType := do
+  push "parseNumberType"
+  if let some r ← tryParseIntegerType then pop "parseNumberType"; return NumberType.integerType r
+  else if let some r ← tryParseFloatType then pop "parseNumberType"; return NumberType.floatType r
+  else throw <| ← error "Number type"
+
 def parseComplexElementType : PState ComplexType := do
   push "parseComplexElementType"
-  let st ← get
-  if st.is "f32" then parseItem "f32" ; pop "parseComplexElementType"; return ComplexType.f32
-  else if st.is "f64" then parseItem "f64" ; pop "parseComplexElementType"; return ComplexType.f64
-  else throw <| st.error "Complex element type"
+  if ← isParse "f32" then pop "parseComplexElementType"; return ComplexType.f32
+  else if ← isParse "f64" then pop "parseComplexElementType"; return ComplexType.f64
+  else throw <| ← error "Complex element type"
 
 def parseComplexType : PState ComplexType := do
   push "parseComplexType"
@@ -27,8 +79,7 @@ def parseComplexType : PState ComplexType := do
 
 partial def parseShape : PState (List Nat) := do
   push "parseShape"
-  let st ← get
-  if ! st.isDigit then pop "parseShape"; return []
+  if ! (← isDigit) then pop "parseShape"; return []
   else
     let dim ← parseDecimal
     parseItem "x"
@@ -38,55 +89,17 @@ partial def parseShape : PState (List Nat) := do
 
 def parseTensorElementType : PState TensorElementType := do
   push "parseTensorElementType"
-  let st ← get
-  if st.is "i1" && ! st.is "i16" then parseItem "i1" ; pop "parseTensorElementType"; return TensorElementType.booleanType
-  else if st.is "complex" then pop "parseTensorElementType"; return TensorElementType.complexType <| ← parseComplexType
-  else if let some r ← tryParseIntegerType then pop "parseTensorElementType"; return TensorElementType.integerType r
-  else if let some r ← tryParseFloatType then pop "parseTensorElementType"; return TensorElementType.floatType r
-  else throw <| st.error "TensorElementType"
-
-def parseQuantizationStorageType : PState IntegerType := do
-  push "parseQuantizationStorageType"
-  let r ← parseIntegerType
-  pop "parseQuantizationStorageType"
-  return r
-
-def parseQuantizationStorageMinMax : PState (IntegerConstant × IntegerConstant) := do
-  push "parseQuantizationStorageMinMax"
-  let min ← parseIntegerConstant
-  let max ← parseIntegerConstant
-  pop "parseQuantizationStorageMinMax"
-  return (min,max)
-
-def parseQuantizationExpressedType : PState FloatType := do
-  push "parseQuantizationExpressedType"
-  let r ← parseFloatType
-  pop "parseQuantizationExpressedType"
-  return r
-
-def parseQuantizationDimension : PState IntegerConstant := do
-  push "parseQuantizationDimension"
-  let r ← parseIntegerConstant
-  pop "parseQuantizationDimension"
-  return r
-
-def parseQuantizationScale : PState FloatConstant := do
-  push "parseQuantizationScale"
-  let r ← parseFloatConstant
-  pop "parseQuantizationScale"
-  return r
-
-def parseQuantizationZeroPoint : PState IntegerConstant := do
-  push "parseQuantizationZeroPoint"
-  let r ← parseIntegerConstant
-  pop "parseQuantizationZeroPoint"
-  return r
+  if let some r ← tryParseIntegerType then pop "parseTensorElementType"; return TensorElementType.integerType r
+  if ← isParse "i1" then pop "parseTensorElementType"; return TensorElementType.booleanType
+  if ← is "complex" then pop "parseTensorElementType"; return TensorElementType.complexType <| ← parseComplexType
+  if let some r ← tryParseFloatType then pop "parseTensorElementType"; return TensorElementType.floatType r
+  throw <| ← error "TensorElementType"
 
 def parseQuantizationParameter : PState QuantizationParameter := do
   push "parseQuantizationParameter"
-  let quantizationScale ← parseQuantizationScale
+  let quantizationScale ← parseFloatLiteral
   parseItem ":"
-  let quantizationZeroPoint ← parseQuantizationZeroPoint
+  let quantizationZeroPoint ← parseIntegerLiteral
   let parseResult :=
     { quantizationScale := quantizationScale,
       quantizationZeroPoint := quantizationZeroPoint
@@ -96,9 +109,8 @@ def parseQuantizationParameter : PState QuantizationParameter := do
 
 def parseQuantizationParameters : PState (List QuantizationParameter) := do
   push "parseQuantizationParameters"
-  let st ← get
-  if st.is "{" then
-    let quantizationParameters ← parseList "{" "}" (some ",") parseQuantizationParameter
+  if ← is "{" then
+    let quantizationParameters ← parseList "{" "}" "," parseQuantizationParameter
     pop "parseQuantizationParameters"
     return quantizationParameters
   else
@@ -110,17 +122,19 @@ def parseQuantizedTensorElementType : PState QuantizedTensorElementType := do
   push "parseQuantizedTensorElementType"
   parseItem "!quant.uniform"
   parseItem "<"
-  let quantizationStorageType ← parseQuantizationStorageType
+  let quantizationStorageType ← parseIntegerType
   let mut quantizationStorageMinMax := none
-  let st₁ ← get
-  if st₁.is "<" then
-    quantizationStorageMinMax := some <| ← parseQuantizationStorageMinMax
+  if ← isParse "<" then
+    let min ← parseIntegerLiteral
+    parseItem ":"
+    let max ← parseIntegerLiteral
+    quantizationStorageMinMax := some (min,max)
+    parseItem ">"
   parseItem ":"
-  let quantizationExpressedType ← parseQuantizationExpressedType
+  let quantizationExpressedType ← parseFloatType
   let mut quantizationDimension := none
-  let st₂ ← get
-  if st₂.is ":" then
-    quantizationDimension := some <| ← parseQuantizationDimension
+  if ← isParse ":" then
+    quantizationDimension ← parseIntegerLiteral
   parseItem ","
   let quantizationParameters ← parseQuantizationParameters
   parseItem ">"
@@ -136,8 +150,7 @@ def parseQuantizedTensorElementType : PState QuantizedTensorElementType := do
 
 def parseTensorElementTypeGen : PState TensorElementTypeGen := do
   push "parseTensorElementTypeGen"
-  let st ← get
-  if st.is "!quant.uniform"
+  if ← is "!quant.uniform"
   then
     let quantizedTensorElementType ← parseQuantizedTensorElementType
     pop "parseTensorElementTypeGen"
@@ -159,7 +172,7 @@ def parseTensorType : PState TensorType := do
 
 def parseTokenType : PState ValueType := do
   push "parseTokenType"
-  parseItem "token"
+  parseItem "!stablehlo.token"
   pop "parseTokenType"
   return ValueType.tokenType
 
@@ -168,57 +181,61 @@ mutual
 partial def parseTupleType : PState ValueType := do
   push "parseTupleType"
   parseItem "tuple"
-  let TupleElementTypes ← parseList "<" ">" (some ",") parseValueType
+  let TupleElementTypes ← parseList "<" ">" "," parseValueType
   pop "parseTupleType"
   return ValueType.tupleType TupleElementTypes
 
 partial def parseValueType : PState ValueType := do
   push "parseValueType"
-  let st ← get
-  if st.is "tensor" then pop "parseValueType"; return ValueType.tensorType <| ← parseTensorType
-  else if st.is "tuple" then
+  if ← is "tensor" then pop "parseValueType"; return ValueType.tensorType <| ← parseTensorType
+  else if ← is "tuple" then
     let r ← parseTupleType
     pop "parseValueType"
     return r
-  else if st.is "token" then
+  else if ← is "!stablehlo.token" then
     let r ← parseTokenType
     pop "parseValueType"
     return r
-  else throw <| st.error "Value Type"
+  else throw <| ← error "Value Type"
 
 end
 
+-- Temporary? Mulitple results?
 def parseValueTypesOutput : PState (List ValueType) := do
   push "parseValueTypesOutput"
-  let r ← parseListOneorMore "," parseValueType
+  let mut valueTypes : List ValueType := []
+  if ← is "(" then
+    valueTypes ← parseList "(" ")" "," parseValueType
+  else
+    let r ← parseValueType
+    valueTypes := [r]
   pop "parseValueTypesOutput"
-  return r
-
-def parseFunctionTypeShort : PState FunctionType := do
-  push "parseFunctionTypeShort"
-  let outputType ← parseValueTypesOutput
-  pop "parseFunctionTypeShort"
-  return FunctionType.short outputType
+  return valueTypes
 
 def parseValueTypes : PState (List ValueType) := do
   push "parseValueTypes"
-  let r ← parseList "(" ")" (some ",") parseValueType
+  let r ← parseList "(" ")" "," parseValueType
   pop "parseValueTypes"
   return r
 
-def parseFunctionTypeLong : PState FunctionType := do
+def parseFunctionType : PState FunctionType := do
   push "parseFunctionTypeLong"
   let inputTypes ← parseValueTypes
   parseItem "-"
   parseItem ">"
   let outputType ← parseValueTypesOutput
   pop "parseFunctionTypeLong"
-  return FunctionType.long inputTypes outputType
+  return { domain := inputTypes, range := outputType }
 
 def parseStringType : PState NonValueType := do
   push "parseStringType"
   parseItem "string"
   pop "parseStringType"
   return NonValueType.stringType
+
+def parseType : PState SType := do
+  if (← is "tensor") || (← is "tuple") || (← is "!stablehlo.token") then
+    return SType.valueType <|  ← parseValueType
+  return SType.nonValueType <| NonValueType.tensorElementType <| ← parseTensorElementType
 
 end StableHLO
