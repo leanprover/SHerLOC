@@ -6,7 +6,7 @@ Authors: Jean-Baptiste Tristan
 import SHerLOC.AST1
 import SHerLOC.Parsing.Parser
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def parseValueId : PState String := do
   push "parseValueId"
@@ -57,4 +57,4 @@ def parseAttrId : PState String := do
   pop "parseAttrId"
   return r
 
-end StableHLO
+end StableHLO.Parsing

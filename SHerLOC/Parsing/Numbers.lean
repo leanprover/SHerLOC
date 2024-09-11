@@ -7,7 +7,7 @@ import SHerLOC.AST1
 import SHerLOC.Parsing.Parser
 import SHerLOC.Parsing.Identifiers
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def parseBooleanLiteral : PState BooleanLiteral := do
   if ← isParse "true" then return BooleanLiteral.true
@@ -309,4 +309,4 @@ def parseLiteral : PState Literal := do
 
   throw <| ← error "literal"
 
-end StableHLO
+end StableHLO.Parsing

@@ -7,7 +7,7 @@ import SHerLOC.AST1
 import SHerLOC.Parsing.Parser
 import SHerLOC.Parsing.Types
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def parseConstant : PState Constant := do
   push "parseConstant"
@@ -19,4 +19,4 @@ def parseConstant : PState Constant := do
   pop "parseConstant"
   return r
 
-end StableHLO
+end StableHLO.Parsing

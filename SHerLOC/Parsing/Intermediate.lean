@@ -9,7 +9,7 @@ import SHerLOC.Parsing.Identifiers
 import SHerLOC.Parsing.Types
 import SHerLOC.Parsing.Constants
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def parseAttribute : PState Attribute := do
   push "parseAttribute"
@@ -49,4 +49,4 @@ def parseDictionaryProperties : PState (List Attribute) := do
   pop "parseDictionaryProperties"
   return r
 
-end StableHLO
+end StableHLO.Parsing

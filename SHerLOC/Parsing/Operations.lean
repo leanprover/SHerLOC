@@ -9,7 +9,7 @@ import SHerLOC.Parsing.Constants
 import SHerLOC.Parsing.Identifiers
 import SHerLOC.Parsing.Intermediate
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def parseOpOutputs : PState (List ValueId) := do
   push "parseOpOutputs"
@@ -121,4 +121,4 @@ partial def parseInputFuncBody : PState (List Operation) := do
 
 end
 
-end StableHLO
+end StableHLO.Parsing

@@ -8,7 +8,7 @@ import SHerLOC.Parsing.Parser
 import SHerLOC.Parsing.Operations
 import SHerLOC.Parsing.Intermediate
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def tryParseDEntryFunctionType : PState (Option FunctionType) := do
   tryParseDictionaryEntry "function_type" parseFunctionType
@@ -116,4 +116,4 @@ def parseFunctions : PState (List Function) := do
   pop "parseFunctions"
   return r
 
-end StableHLO
+end StableHLO.Parsing

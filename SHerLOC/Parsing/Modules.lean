@@ -9,7 +9,7 @@ import SHerLOC.Parsing.Operations
 import SHerLOC.Parsing.Functions
 import SHerLOC.Parsing.Intermediate
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def parseModule : PState Module := do
   push "parseModule"
@@ -47,4 +47,4 @@ def parseModules : PState (List Module) := do
       r := [← parseModule]
   return r
 
-end StableHLO
+end StableHLO.Parsing

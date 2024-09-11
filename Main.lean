@@ -17,7 +17,7 @@ def main (args : List String) : IO UInt32 := do
     for file in files do
       let fp : FilePath := System.mkFilePath ["Tests", file]
       let content ← readFile fp
-      let content := StableHLO.parse content
+      let content := StableHLO.Parsing.parse content
       IO.print s!"Parsing {file}... "
       match content with
       | .ok _ =>
@@ -39,7 +39,7 @@ def main (args : List String) : IO UInt32 := do
     let file := args[0]!
     let fp : FilePath := System.mkFilePath ["Tests", file]
     let content ← readFile fp
-    let content := StableHLO.parse content
+    let content := StableHLO.Parsing.parse content
     match content with
     | .ok p =>
       IO.println s!"{repr p}"

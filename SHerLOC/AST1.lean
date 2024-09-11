@@ -9,7 +9,7 @@ Authors: Jean-Baptiste Tristan
 
 -/
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 abbrev FuncId := String
 
@@ -205,11 +205,15 @@ structure QuantizationParameter where
   quantizationZeroPoint: IntegerLiteral
   deriving Repr, Inhabited, Nonempty
 
-structure QuantizedTensorElementType where
+structure QuantizationBasics where
   quantizationStorageType : IntegerType
   quantizationStorageMinMax : Option (IntegerLiteral × IntegerLiteral)
   quantizationExpressedType : FloatType
   quantizationDimension : Option IntegerLiteral
+  deriving Repr, Inhabited, Nonempty
+
+structure QuantizedTensorElementType where
+  quantizationBasics : QuantizationBasics
   quantizationParameters : List QuantizationParameter
   deriving Repr, Inhabited, Nonempty
 
@@ -306,4 +310,4 @@ structure Module where
 def Program := List Module
   deriving Repr, Inhabited, Nonempty
 
-end StableHLO
+end StableHLO.Parsing

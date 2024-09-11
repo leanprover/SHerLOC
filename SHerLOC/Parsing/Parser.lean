@@ -5,7 +5,7 @@ Authors: Jean-Baptiste Tristan
 -/
 import SHerLOC.AST1
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 structure Trace where
   startLine : Nat
@@ -305,4 +305,4 @@ def parseListNoSep (openingMark closingMark : String) (parse : PState T) : PStat
   parseItem closingMark
   return attrs
 
-end StableHLO
+end StableHLO.Parsing

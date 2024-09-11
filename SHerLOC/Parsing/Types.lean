@@ -7,7 +7,7 @@ import SHerLOC.AST1
 import SHerLOC.Parsing.Parser
 import SHerLOC.Parsing.Numbers
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def tryParseIntegerType : PState (Option IntegerType) := do
   push "tryParseIntegerType"
@@ -134,15 +134,18 @@ def parseQuantizedTensorElementType : PState QuantizedTensorElementType := do
   let quantizationExpressedType ← parseFloatType
   let mut quantizationDimension := none
   if ← isParse ":" then
-    quantizationDimension ← parseIntegerLiteral
+    quantizationDimension := some (← parseIntegerLiteral)
   parseItem ","
   let quantizationParameters ← parseQuantizationParameters
   parseItem ">"
-  let parseResult : QuantizedTensorElementType :=
+  let quantizationBasics : QuantizationBasics :=
     { quantizationStorageType := quantizationStorageType,
       quantizationStorageMinMax := quantizationStorageMinMax,
       quantizationExpressedType := quantizationExpressedType,
-      quantizationDimension := quantizationDimension,
+      quantizationDimension := quantizationDimension
+    }
+  let parseResult : QuantizedTensorElementType :=
+    { quantizationBasics := quantizationBasics
       quantizationParameters := quantizationParameters
     }
   pop "parseQuantizedTensorElementType"
@@ -238,4 +241,4 @@ def parseType : PState SType := do
     return SType.valueType <|  ← parseValueType
   return SType.nonValueType <| NonValueType.tensorElementType <| ← parseTensorElementType
 
-end StableHLO
+end StableHLO.Parsing
