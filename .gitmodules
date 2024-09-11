@@ -1,0 +1,3 @@
+[submodule "stablehlo"]
+	path = stablehlo
+	url = git@github.com:openxla/stablehlo.git
