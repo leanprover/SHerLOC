@@ -68,6 +68,7 @@ inductive ElementLiteral where
   | booleanLiteral (literal : BooleanLiteral)
   | floatLiteral (literal : FloatLiteral)
   | complexLiteral (literal : ComplexLiteral)
+  | stringLiteral (literal : String) -- tensors can be specified with very long strings
   deriving Repr, Inhabited, Nonempty
 
 inductive DenseLiteral where

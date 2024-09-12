@@ -190,11 +190,14 @@ def isHexDigit (c : Char) : Bool :=
   c.val ≥ 48 && c.val ≤ 57 || c.val ≥ 65 && c.val ≤ 70 || c.val ≥ 97 && c.val ≤ 102
 
 def toNatHex (s : String) : Nat :=
-  s.foldl (fun n c =>  n*16 + (
+  dbg_trace "toNatHex"
+  let r := s.foldl (fun n c =>  n*16 + (
     if c.isDigit then c.toNat - '0'.toNat
     else
       if c.val <= 70 then 10 + (c.toNat - 'A'.toNat)
       else 10 + (c.toNat - 'a'.toNat))) 0
+  dbg_trace "toNatHex"
+  r
 
 def parseHexaDecimal : PState Nat := do
   skip

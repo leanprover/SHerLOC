@@ -80,6 +80,8 @@ def parseElementLiteral : PState ElementLiteral := do
     return ElementLiteral.booleanLiteral <| ← parseBooleanLiteral
   if (← is "(") then
     return ElementLiteral.complexLiteral <| ← parseComplexLiteral
+  if (← is "\"") then -- Not a good idea to try to parse these directly as numbers, they can be extremely large
+    return ElementLiteral.stringLiteral <| ← parseString
   throw <| ← error "Element literal"
 
 def parseDenseElements (closingMark : String) : PState (List ElementLiteral) := do
