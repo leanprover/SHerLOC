@@ -42,3 +42,31 @@ do
     name=testdata_`basename $test`
     $shopt $test > Tests/$name
 done
+
+test_data_dynamic=stablehlo/stablehlo/testdata/dynamic
+
+if [ ! -d $test_data_dynamic ]
+then
+    echo "Missing tests: $test_data_dynamic"
+    exit
+fi
+
+for test in `ls $test_data_dynamic/*.mlir`
+do
+    name=testdata__dynamic_`basename $test`
+    $shopt $test > Tests/$name
+done
+
+test_data_quantized=stablehlo/stablehlo/testdata/quantized
+
+if [ ! -d $test_data_quantized ]
+then
+    echo "Missing tests: $test_data_quantized"
+    exit
+fi
+
+for test in `ls $test_data_quantized/*.mlir`
+do
+    name=testdata_quantized_`basename $test`
+    $shopt $test > Tests/$name
+done
