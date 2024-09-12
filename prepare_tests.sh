@@ -13,7 +13,7 @@ then
     exit
 fi
 
-shopt=stablehlo/build/bin/stablehlo-opt
+shopt="stablehlo/build/bin/stablehlo-opt -mlir-print-op-generic -split-input-file"
 
 interpret_test=stablehlo/stablehlo/tests/interpret
 
@@ -25,7 +25,8 @@ fi
 
 for test in `ls $interpret_test/*.mlir`
 do
-    echo $test
+    name=testdata_`basename $test`
+    $shopt $test > Tests/$name
 done
 
 test_data=stablehlo/stablehlo/testdata
@@ -38,5 +39,6 @@ fi
 
 for test in `ls $test_data/*.mlir`
 do
-    $shopt $test
+    name=testdata_`basename $test`
+    $shopt $test > Tests/$name
 done
