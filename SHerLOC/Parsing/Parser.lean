@@ -67,13 +67,21 @@ def error (msg : String) : PState (String × (List Trace) × (List Derivation) )
   let errorMsg := s!"Parsing error line {st.lineNumber}, column {st.columnNumber} : expected {msg} but found {token}"
   return (errorMsg, st.trace, st.derivations)
 
+def skipComment (st : ParsingState) : Nat := Id.run do
+  let mut count := 0
+  for i in [st.index:st.stop] do
+    let c := st.source.get! ⟨ i ⟩
+    count := count + 1
+    if c = '\n' then
+      break
+  return count
+
 def skip : PState Unit := do
   let st ← get
   let mut count := 0
   let mut lines := 0
   let mut column := st.columnNumber
   for i in [st.index:st.stop] do
-    -- let c := if let some c := st.source.get? ⟨ i ⟩  then c else panic s!"Indexing error in skip"
     let c := st.source.get! ⟨ i ⟩
     if c = '\n' then
       count := count + 1
@@ -85,6 +93,11 @@ def skip : PState Unit := do
     else if c = '\t' then
       count := count + 1
       column := column + 8
+    else if c = '/' then
+      if st.source.get! ⟨ i + 1 ⟩ = '/' then -- comment
+        count := count + skipComment (← get) + 2
+        lines := lines + 1
+        column := 0
     else break
   set { st with
     index := st.index + count,
@@ -144,7 +157,6 @@ def parseId : PState String := do
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    --let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in parseId"
     let c := st.source.get! ⟨ i ⟩
     if c.isAlphanum || c = '_' || c = '.' then token := token.push c
     else break
@@ -162,7 +174,6 @@ def parseDecimal : PState Nat := do
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    --let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in parseDecimal"
     let c := st.source.get! ⟨ i ⟩
     if c.isDigit then token := token.push c
     else break
@@ -191,7 +202,6 @@ def parseHexaDecimal : PState Nat := do
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    --let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in parseDecimal"
     let c := st.source.get! ⟨ i ⟩
     if isHexDigit c then token := token.push c
     else break
@@ -211,7 +221,6 @@ def parseString : PState String := do
   let mut token := ""
   let mut escaped := false
   for i in [st.index:st.stop] do
-    --let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in parseString"
     let c := st.source.get! ⟨ i ⟩
     if c = '"' then
       if escaped then
