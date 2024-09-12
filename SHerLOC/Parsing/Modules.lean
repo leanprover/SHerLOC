@@ -25,6 +25,8 @@ def parseModule : PState Module := do
   if (← isParse "{") then
     if (← isParse "^bb0:") then -- Empty module
       let r : Module := { modId := name, modAttrs := [], modFuncs := [] }
+      parseItems ["}",")"]
+      parseItems [":","(",")","->","(",")"]
       pop "parseModule"
       return r
     let region ← parseFunctions
