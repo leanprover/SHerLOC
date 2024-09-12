@@ -40,7 +40,7 @@ def parseValueIdOpArg : PState String := do
 def parseFuncId : PState String := do
   push "parseFuncId"
   parseItem "@"
-  let r ← parseId
+  let r ← parseFId
   pop "parseFuncId"
   return r
 

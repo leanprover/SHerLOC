@@ -152,6 +152,23 @@ def parseItems (keywords : List String) : PState Unit := do
   for i in [:keywords.length] do
     parseItem <| keywords.get! i
 
+def parseFId : PState String := do
+  skip
+  let st ← get
+  let mut token := ""
+  for i in [st.index:st.stop] do
+    let c := st.source.get! ⟨ i ⟩
+    if c.isAlphanum || c = '_' || c = '.' || c = '"' || c = '<' || c = '>' then token := token.push c
+    else break
+  if token.length != 0 then
+    set { st with
+      index := st.index + token.length,
+      columnNumber := st.columnNumber + token.length
+    }
+    return token
+  else
+    throw <| ← error s!"Id"
+
 def parseId : PState String := do
   skip
   let st ← get

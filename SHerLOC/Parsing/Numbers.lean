@@ -153,8 +153,8 @@ def parsePrecisionConfig : PState PrecisionConfig := do
   push "parsePrecisionConfig"
   let mut r := none
   if ← isParse "DEFAULT" then r := PrecisionConfig.default
-  if ← isParse "HIGH" then r := PrecisionConfig.high
   if ← isParse "HIGHEST" then r := PrecisionConfig.highest
+  if ← isParse "HIGH" then r := PrecisionConfig.high
   if let some res := r then
     pop "parsePrecisionConfig"
     return res

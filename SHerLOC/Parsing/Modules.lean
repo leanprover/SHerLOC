@@ -22,15 +22,25 @@ def parseModule : PState Module := do
     name ← parseString
     parseItem "}>"
   parseItem "("
-  let region ← parseFunctions
-  parseItem ")"
-  let mut attributes : List Attribute := []
-  if ← is "{" then
-    attributes ← parseAttributes
-  parseItems [":","(",")","->","(",")"]
-  let r : Module := { modId := name, modAttrs := attributes, modFuncs := region }
-  pop "parseModule"
-  return r
+  if (← isParse "{") then
+    if (← isParse "^bb0:") then -- Empty module
+      let r : Module := { modId := name, modAttrs := [], modFuncs := [] }
+      pop "parseModule"
+      return r
+    let region ← parseFunctions
+    parseItems ["}",")"]
+    let mut attributes : List Attribute := []
+    if ← is "{" then
+      attributes ← parseAttributes
+    parseItems [":","(",")","->","(",")"]
+    let r : Module := { modId := name, modAttrs := attributes, modFuncs := region }
+    pop "parseModule"
+    return r
+  else
+    let r : Module := { modId := name, modAttrs := [], modFuncs := [] }
+    pop "parseModule"
+    return r
+
 
 def parseModules : PState (List Module) := do
   parseItems ["\"builtin.module\"", "(", ")"]

@@ -112,7 +112,7 @@ def parseFunction : PState Function := do
 
 def parseFunctions : PState (List Function) := do
   push "parseFunctions"
-  let r ← parseListNoSep "{" "}" parseFunction
+  let r ← parseListAuxNoSep "}" parseFunction []
   pop "parseFunctions"
   return r
 
