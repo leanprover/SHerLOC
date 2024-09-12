@@ -77,15 +77,26 @@ def parseComplexType : PState ComplexType := do
   pop "parseComplexType"
   return t
 
-partial def parseShape : PState (List Nat) := do
+def tryParseDimensionSize : PState (Option DimensionSize) := do
+  push "parseDimensionSize"
+  let mut r := none
+  if (← isDigit) then
+    r := some <| DimensionSize.known <| ← parseDecimal
+  if (← isParse "?") then
+    r := some <| DimensionSize.unknown
+  pop "parseDimensionSize"
+  return r
+
+partial def parseShape : PState (List DimensionSize) := do
   push "parseShape"
-  if ! (← isDigit) then pop "parseShape"; return []
-  else
-    let dim ← parseDecimal
+  if let some dim ← tryParseDimensionSize then
     parseItem "x"
     let dims ← parseShape
     pop "parseShape"
     return dim :: dims
+  else
+    pop "parseShape"
+    return []
 
 def parseTensorElementType : PState TensorElementType := do
   push "parseTensorElementType"

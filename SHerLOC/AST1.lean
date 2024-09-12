@@ -223,8 +223,13 @@ inductive TensorElementTypeGen where
   | quantized (t : QuantizedTensorElementType)
   deriving Repr, Inhabited, Nonempty
 
+inductive DimensionSize where
+  | known (size : Nat)
+  | unknown
+  deriving Repr, Inhabited, Nonempty
+
 structure TensorType where
-  shape : List Nat
+  shape : List DimensionSize
   tensorElementTypeGen : TensorElementTypeGen
   deriving Repr, Inhabited, Nonempty
 
