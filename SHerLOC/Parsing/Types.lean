@@ -109,8 +109,9 @@ def parseTensorElementType : PState TensorElementType := do
 def parseQuantizationParameter : PState QuantizationParameter := do
   push "parseQuantizationParameter"
   let quantizationScale ← parseFloatLiteral
-  parseItem ":"
-  let quantizationZeroPoint ← parseIntegerLiteral
+  let mut quantizationZeroPoint := { sign := Sign.plus , decimal := 0 }
+  if (← isParse ":") then
+    quantizationZeroPoint ← parseIntegerLiteral
   let parseResult :=
     { quantizationScale := quantizationScale,
       quantizationZeroPoint := quantizationZeroPoint

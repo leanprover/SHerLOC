@@ -226,7 +226,7 @@ def parseEnumLiteral : PState EnumLiteral := do
   if ← isParse "channel_type" then r := EnumLiteral.channelType <| ← parseChannelType
   if ← isParse "rng_distribution" then r := EnumLiteral.rngDistribution <| ← parseRngDistribution
   if ← isParse "rng_algorithm" then r := EnumLiteral.rngAlgorithm <| ← parseRngAlgorithm
-  if ← isParse "transpose_a" then r := EnumLiteral.transposeA <| ← parseTransposeA
+  if ← isParse "transpose" then r := EnumLiteral.transposeA <| ← parseTransposeA
   if let some res := r then
     parseItem ">"
     pop "parseEnumLiteral"
