@@ -25,7 +25,7 @@ fi
 
 for test in `ls $interpret_test/*.mlir`
 do
-    name=testdata_`basename $test`
+    name=interpret_`basename $test`
     $shopt $test > Tests/$name
 done
 
