@@ -41,9 +41,11 @@ def tryParseFloatType : PState (Option FloatType) := do
     if ← isParse "f16" then r := some FloatType.f16
     if ← isParse "f32" then r := some FloatType.f32
     if ← isParse "f64" then r := some FloatType.f64
+    if ← isParse "f8E3M4" then r := some FloatType.f8E3M4
     if ← isParse "f8E4M3B11FNUZ" then r := some FloatType.f8E4M3B11FNUZ
     if ← isParse "f8E4M3FNUZ" then r := some FloatType.f8E4M3FNUZ
     if ← isParse "f8E4M3FN" then r := some FloatType.f8E4M3FN
+    if ← isParse "f8E4M3" then r := some FloatType.f8E4M3
     if ← isParse "f8E5M2FNUZ" then r := some FloatType.f8E5M2FNUZ
     if ← isParse "f8E5M2" then r := some FloatType.f8E5M2
   }

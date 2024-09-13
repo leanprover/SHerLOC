@@ -177,6 +177,8 @@ structure IntegerType where
   deriving Repr, Inhabited, Nonempty
 
 inductive FloatType where
+  | f8E3M4
+  | f8E4M3
   | f8E4M3FN
   | f8E5M2
   | f8E4M3FNUZ
@@ -273,7 +275,6 @@ mutual
     | func (literal : FuncId)
     | list (literal : List Literal)
     | dictionary (literal : List Attribute)
-    | use_global_device_ids
     | array (literal : ArrayLiteral)
 
     deriving Repr, Inhabited, Nonempty

@@ -62,10 +62,9 @@ mutual
 
   partial def parseAttribute : PState Attribute := do
     push "parseAttribute"
-    if ← isParse "use_global_device_ids" then -- Review
+    if ← isParse "use_global_device_ids" then
       pop "parseAttribute"
-      throw <| ← error "use_global_device_ids"
-      -- return -- Attribute.mk "use_global_device_ids" { literal := Literal.use_global_device_ids, typ := none }}
+      return Attribute.mk "use_global_device_ids" <| Constant.mk (Literal.element (ElementLiteral.booleanLiteral BooleanLiteral.true)) none
     else
       let id ← parseId
       parseItem "="
