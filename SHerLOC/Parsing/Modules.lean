@@ -45,13 +45,16 @@ def parseModule : PState Module := do
 
 partial def parseModules : PState (List Module) := do
   push "parseModules"
-  if (← is "\"builtin.module\"") then
+  let done ← done?
+  if done then
+    pop "parseModules"
+    return []
+  else
     let mod ← parseModule
     let mods ← parseModules
     pop "parseModules"
     return mod :: mods
-  else
-    pop "parseModules"
-    return []
+
+
 
 end StableHLO.Parsing

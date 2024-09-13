@@ -67,9 +67,9 @@ def error (msg : String) : PState (String × (List Trace) × (List Derivation) )
   let errorMsg := s!"Parsing error line {st.lineNumber}, column {st.columnNumber} : expected {msg} but found {token}"
   return (errorMsg, st.trace, st.derivations)
 
-def skipComment (st : ParsingState) : Nat := Id.run do
+def skipComment (index : Nat) (st : ParsingState) : Nat := Id.run do
   let mut count := 0
-  for i in [st.index:st.stop] do
+  for i in [index:st.stop] do
     let c := st.source.get! ⟨ i ⟩
     count := count + 1
     if c = '\n' then
@@ -93,17 +93,21 @@ def skip : PState Unit := do
     else if c = '\t' then
       count := count + 1
       column := column + 8
-    else if c = '/' then
-      if st.source.get! ⟨ i + 1 ⟩ = '/' then -- comment
-        count := count + skipComment (← get) + 2
-        lines := lines + 1
-        column := 0
+    else if c = '/' && st.source.get! ⟨ i + 1 ⟩ = '/' then
+      count := count + skipComment (st.index + count) (← get)
+      lines := lines + 1
+      column := 0
     else break
   set { st with
     index := st.index + count,
     lineNumber := st.lineNumber + lines,
     columnNumber := column
     }
+
+def done? : PState Bool := do
+  skip
+  let st ← get
+  if st.index >= st.stop then return true else return false
 
 def parseItem (keyword : String) : PState Unit := do
   skip
