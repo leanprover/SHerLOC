@@ -145,9 +145,30 @@ inductive ArrayLiteral where
   | array1 (literal : List BooleanLiteral)
   deriving Repr, Inhabited, Nonempty
 
-structure ChannelHandle where
-  handle : Nat
-  typ : Nat
+inductive StableHLORecordFieldValue where
+  | one (literal : Nat)
+  | many (literal : List Nat)
+  deriving Repr, Inhabited, Nonempty
+
+structure StableHLORecordField where
+  name : String
+  value : StableHLORecordFieldValue
+  deriving Repr, Inhabited, Nonempty
+
+inductive ConvolutionMode where
+  | i
+  | o
+  | f
+  | one
+  | b
+  | zero
+  | two
+  deriving Repr, Inhabited, Nonempty
+
+structure Convolution where
+  lhs : List ConvolutionMode
+  rhs : List ConvolutionMode
+  result : List ConvolutionMode
   deriving Repr, Inhabited, Nonempty
 
 inductive Literal where
@@ -155,11 +176,12 @@ inductive Literal where
   | element (literal : ElementLiteral)
   | tensor (literal : TensorLiteral)
   | string (literal : String)
+  | stableHLORecord (literal : List StableHLORecordField)
+  | convolution (literal : Convolution)
 
+  | special
   | use_global_device_ids
   | array (literal : ArrayLiteral)
-  | special
-  | channelHandle (literal : ChannelHandle)
   | experiment1 (literal : List FuncId)
   | experiment2 (literal : List (List FuncId))
   | experiment3 (literal : List EnumLiteral)

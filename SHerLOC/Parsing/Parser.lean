@@ -332,4 +332,7 @@ def parseListNoSep (openingMark closingMark : String) (parse : PState T) : PStat
   parseItem closingMark
   return attrs
 
+def parseDecimals : PState (List Nat) := do
+  parseList "[" "]" "," parseDecimal
+
 end StableHLO.Parsing
