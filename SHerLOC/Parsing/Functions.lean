@@ -3,12 +3,12 @@ Copyright (c) 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jean-Baptiste Tristan
 -/
-import SHerLOC.AST.Basic
+import SHerLOC.AST1
 import SHerLOC.Parsing.Parser
 import SHerLOC.Parsing.Operations
 import SHerLOC.Parsing.Intermediate
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def tryParseDEntryFunctionType : PState (Option FunctionType) := do
   tryParseDictionaryEntry "function_type" parseFunctionType
@@ -112,8 +112,8 @@ def parseFunction : PState Function := do
 
 def parseFunctions : PState (List Function) := do
   push "parseFunctions"
-  let r ← parseListNoSep "{" "}" parseFunction
+  let r ← parseListAuxNoSep "}" parseFunction []
   pop "parseFunctions"
   return r
 
-end StableHLO
+end StableHLO.Parsing

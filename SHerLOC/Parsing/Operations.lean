@@ -3,13 +3,13 @@ Copyright (c) 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jean-Baptiste Tristan
 -/
-import SHerLOC.AST.Basic
+import SHerLOC.AST1
 import SHerLOC.Parsing.Parser
 import SHerLOC.Parsing.Constants
 import SHerLOC.Parsing.Identifiers
 import SHerLOC.Parsing.Intermediate
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def parseOpOutputs : PState (List ValueId) := do
   push "parseOpOutputs"
@@ -105,8 +105,6 @@ partial def parseOperation : PState Operation := do
   let mut opInputFuncs := []
   if ← is "(" then
     opInputFuncs ← parseOpInputFuncs
-  if ← is "{"  then
-    opInputAttrs := opInputAttrs ++ (← parseAttributes)
   parseItem ":"
   let functiontype ← parseFunctionType
   let operation := Operation.stablehlo opName opInputValues opInputFuncs opInputAttrs opOutputs functiontype
@@ -121,4 +119,4 @@ partial def parseInputFuncBody : PState (List Operation) := do
 
 end
 
-end StableHLO
+end StableHLO.Parsing

@@ -3,11 +3,11 @@ Copyright (c) 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jean-Baptiste Tristan
 -/
-import SHerLOC.AST.Basic
+import SHerLOC.AST1
 import SHerLOC.Parsing.Parser
 import SHerLOC.Parsing.Identifiers
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def parseBooleanLiteral : PState BooleanLiteral := do
   if ← isParse "true" then return BooleanLiteral.true
@@ -80,6 +80,8 @@ def parseElementLiteral : PState ElementLiteral := do
     return ElementLiteral.booleanLiteral <| ← parseBooleanLiteral
   if (← is "(") then
     return ElementLiteral.complexLiteral <| ← parseComplexLiteral
+  if (← is "\"") then -- Not a good idea to try to parse these directly as numbers, they can be extremely large
+    return ElementLiteral.stringLiteral <| ← parseString
   throw <| ← error "Element literal"
 
 def parseDenseElements (closingMark : String) : PState (List ElementLiteral) := do
@@ -151,8 +153,8 @@ def parsePrecisionConfig : PState PrecisionConfig := do
   push "parsePrecisionConfig"
   let mut r := none
   if ← isParse "DEFAULT" then r := PrecisionConfig.default
-  if ← isParse "HIGH" then r := PrecisionConfig.high
   if ← isParse "HIGHEST" then r := PrecisionConfig.highest
+  if ← isParse "HIGH" then r := PrecisionConfig.high
   if let some res := r then
     pop "parsePrecisionConfig"
     return res
@@ -214,7 +216,6 @@ def parseTransposeA : PState TransposeA := do
 
 def parseEnumLiteral : PState EnumLiteral := do
   push "parseEnumLiteral"
-  parseItem "#stablehlo"
   parseItem "<"
   let mut r := none
   if ← isParse "comparison_direction" then r := EnumLiteral.comparisonDirection <| ← parseComparisonDirection
@@ -224,7 +225,7 @@ def parseEnumLiteral : PState EnumLiteral := do
   if ← isParse "channel_type" then r := EnumLiteral.channelType <| ← parseChannelType
   if ← isParse "rng_distribution" then r := EnumLiteral.rngDistribution <| ← parseRngDistribution
   if ← isParse "rng_algorithm" then r := EnumLiteral.rngAlgorithm <| ← parseRngAlgorithm
-  if ← isParse "transpose_a" then r := EnumLiteral.transposeA <| ← parseTransposeA
+  if ← isParse "transpose" then r := EnumLiteral.transposeA <| ← parseTransposeA
   if let some res := r then
     parseItem ">"
     pop "parseEnumLiteral"
@@ -247,66 +248,36 @@ def parseArrayLiteral : PState ArrayLiteral := do
     return ArrayLiteral.array1 r
   throw <| ← error "array literal"
 
-def parseExperiment1 : PState (List FuncId) := do
-  parseList "[" "]" "," parseFuncId
+def parseConvolutionMode : PState ConvolutionMode := do
+  push "parseConvolutionMode"
+  let mut r := none
+  if (← isParse "o") then r := ConvolutionMode.o
+  else if (← isParse "f") then r := ConvolutionMode.f
+  else if (← isParse "i") then r := ConvolutionMode.i
+  else if (← isParse "0") then r := ConvolutionMode.zero
+  else if (← isParse "1") then r := ConvolutionMode.one
+  else if (← isParse "b") then r := ConvolutionMode.b
+  else if (← isParse "2") then r := ConvolutionMode.two
+  pop "parseConvolutionMode"
+  if let some res := r then return res
+  else throw <| ← error "convolution mode"
 
-def parseExperiment2 : PState (List (List FuncId)) := do
-  parseList "[" "]" "," parseExperiment1
+def parseConvolutionModes : PState (List ConvolutionMode) := do
+  push "parseConvolutionModes"
+  let r ← parseList "[" "]" "," parseConvolutionMode
+  pop "parseConvolutionModes"
+  return r
 
-def parseExperiment3 : PState (List EnumLiteral) := do
-  parseList "[" "]" "," parseEnumLiteral
-
-def parseChannelHandle : PState (ChannelHandle) := do
-  parseItems ["<"]
-  parseItems ["handle", "="]
-  let handle ← parseDecimal
-  parseItem ","
-  parseItems ["type", "="]
-  let typ ← parseDecimal
+def parseConvolution : PState Convolution := do
+  push "parseConvolution"
+  parseItem "<"
+  let lhs ← parseConvolutionModes
+  parseItem "x"
+  let rhs ← parseConvolutionModes
+  parseItem "->"
+  let result ← parseConvolutionModes
   parseItem ">"
-  return { handle := handle, typ := typ }
+  pop "parseConvolution"
+  return { lhs, rhs, result }
 
-def parseLiteral : PState Literal := do
-  skip
-  if (← isDigit) || (← isChar '+') || (← isChar '-') then
-    return Literal.element <| ElementLiteral.floatLiteral <| ← parseFloatLiteral
-  if ← isChar 'd' then
-    return Literal.tensor <| ← parseTensorLiteral
-  if (← isChar 't') || (← isChar 'f') then
-    return Literal.element <| ElementLiteral.booleanLiteral <| ← parseBooleanLiteral
-  if (← isChar '(') then
-    return Literal.element <| ElementLiteral.complexLiteral <| ← parseComplexLiteral
-  if ← isChar '"' then
-    return Literal.string <| ← parseStringLiteral
-  if ← isChar 'a' then
-    return Literal.array <| ← parseArrayLiteral
-
-  if ← isChar '#' then {
-    if ← isParse "#stablehlo.conv" then flyOver "<" ">"; return Literal.special
-    if ← isParse "#stablehlo.dot_algorithm" then flyOver "<" ">"; return Literal.special
-    if ← isParse "#stablehlo.dot" then flyOver "<" ">"; return Literal.special
-    if ← isParse "#stablehlo.channel_handle" then
-      return Literal.channelHandle <| ← parseChannelHandle
-    if ← isParse "#stablehlo.scatter" then flyOver "<" ">"; return Literal.special
-    if ← isParse "#stablehlo.gather" then flyOver "<" ">"; return Literal.special
-    if ← is "#stablehlo" then return Literal.enum <| ← parseEnumLiteral
-  }
-
-  if ← isChar '[' then {
-    if ← is "[[" then
-      return Literal.experiment2 <| ← parseExperiment2
-    if ← is "[#" then
-      return Literal.experiment3 <| ← parseExperiment3
-    if ← is "[" then
-      return Literal.experiment1 <| ← parseExperiment1
-  }
-
-  if ← isChar '{' then
-    flyOver "{" "}"; return Literal.special
-
-  if ← isChar '@' then
-    return Literal.func <| ← parseFuncId
-
-  throw <| ← error "literal"
-
-end StableHLO
+end StableHLO.Parsing

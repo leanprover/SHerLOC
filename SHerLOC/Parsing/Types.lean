@@ -3,11 +3,11 @@ Copyright (c) 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jean-Baptiste Tristan
 -/
-import SHerLOC.AST.Basic
+import SHerLOC.AST1
 import SHerLOC.Parsing.Parser
 import SHerLOC.Parsing.Numbers
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def tryParseIntegerType : PState (Option IntegerType) := do
   push "tryParseIntegerType"
@@ -41,13 +41,16 @@ def tryParseFloatType : PState (Option FloatType) := do
     if ← isParse "f16" then r := some FloatType.f16
     if ← isParse "f32" then r := some FloatType.f32
     if ← isParse "f64" then r := some FloatType.f64
+    if ← isParse "f8E3M4" then r := some FloatType.f8E3M4
     if ← isParse "f8E4M3B11FNUZ" then r := some FloatType.f8E4M3B11FNUZ
     if ← isParse "f8E4M3FNUZ" then r := some FloatType.f8E4M3FNUZ
     if ← isParse "f8E4M3FN" then r := some FloatType.f8E4M3FN
+    if ← isParse "f8E4M3" then r := some FloatType.f8E4M3
     if ← isParse "f8E5M2FNUZ" then r := some FloatType.f8E5M2FNUZ
     if ← isParse "f8E5M2" then r := some FloatType.f8E5M2
   }
   if ← isParse "bf16" then r := some FloatType.bf16
+  if ← isParse "tf32" then r := some FloatType.tf32
   pop "tryParseFloatType"
   return r
 
@@ -77,15 +80,26 @@ def parseComplexType : PState ComplexType := do
   pop "parseComplexType"
   return t
 
-partial def parseShape : PState (List Nat) := do
+def tryParseDimensionSize : PState (Option DimensionSize) := do
+  push "parseDimensionSize"
+  let mut r := none
+  if (← isDigit) then
+    r := some <| DimensionSize.known <| ← parseDecimal
+  if (← isParse "?") then
+    r := some <| DimensionSize.unknown
+  pop "parseDimensionSize"
+  return r
+
+partial def parseShape : PState (List DimensionSize) := do
   push "parseShape"
-  if ! (← isDigit) then pop "parseShape"; return []
-  else
-    let dim ← parseDecimal
+  if let some dim ← tryParseDimensionSize then
     parseItem "x"
     let dims ← parseShape
     pop "parseShape"
     return dim :: dims
+  else
+    pop "parseShape"
+    return []
 
 def parseTensorElementType : PState TensorElementType := do
   push "parseTensorElementType"
@@ -98,8 +112,9 @@ def parseTensorElementType : PState TensorElementType := do
 def parseQuantizationParameter : PState QuantizationParameter := do
   push "parseQuantizationParameter"
   let quantizationScale ← parseFloatLiteral
-  parseItem ":"
-  let quantizationZeroPoint ← parseIntegerLiteral
+  let mut quantizationZeroPoint := { sign := Sign.plus , decimal := 0 }
+  if (← isParse ":") then
+    quantizationZeroPoint ← parseIntegerLiteral
   let parseResult :=
     { quantizationScale := quantizationScale,
       quantizationZeroPoint := quantizationZeroPoint
@@ -134,15 +149,18 @@ def parseQuantizedTensorElementType : PState QuantizedTensorElementType := do
   let quantizationExpressedType ← parseFloatType
   let mut quantizationDimension := none
   if ← isParse ":" then
-    quantizationDimension ← parseIntegerLiteral
+    quantizationDimension := some (← parseIntegerLiteral)
   parseItem ","
   let quantizationParameters ← parseQuantizationParameters
   parseItem ">"
-  let parseResult : QuantizedTensorElementType :=
+  let quantizationBasics : QuantizationBasics :=
     { quantizationStorageType := quantizationStorageType,
       quantizationStorageMinMax := quantizationStorageMinMax,
       quantizationExpressedType := quantizationExpressedType,
-      quantizationDimension := quantizationDimension,
+      quantizationDimension := quantizationDimension
+    }
+  let parseResult : QuantizedTensorElementType :=
+    { quantizationBasics := quantizationBasics
       quantizationParameters := quantizationParameters
     }
   pop "parseQuantizedTensorElementType"
@@ -238,4 +256,4 @@ def parseType : PState SType := do
     return SType.valueType <|  ← parseValueType
   return SType.nonValueType <| NonValueType.tensorElementType <| ← parseTensorElementType
 
-end StableHLO
+end StableHLO.Parsing

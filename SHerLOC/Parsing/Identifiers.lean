@@ -3,10 +3,10 @@ Copyright (c) 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jean-Baptiste Tristan
 -/
-import SHerLOC.AST.Basic
+import SHerLOC.AST1
 import SHerLOC.Parsing.Parser
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 def parseValueId : PState String := do
   push "parseValueId"
@@ -40,7 +40,7 @@ def parseValueIdOpArg : PState String := do
 def parseFuncId : PState String := do
   push "parseFuncId"
   parseItem "@"
-  let r ← parseId
+  let r ← parseFId
   pop "parseFuncId"
   return r
 
@@ -57,4 +57,4 @@ def parseAttrId : PState String := do
   pop "parseAttrId"
   return r
 
-end StableHLO
+end StableHLO.Parsing

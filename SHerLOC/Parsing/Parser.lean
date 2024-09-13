@@ -3,9 +3,9 @@ Copyright (c) 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jean-Baptiste Tristan
 -/
-import SHerLOC.AST.Basic
+import SHerLOC.AST1
 
-namespace StableHLO
+namespace StableHLO.Parsing
 
 structure Trace where
   startLine : Nat
@@ -67,13 +67,21 @@ def error (msg : String) : PState (String × (List Trace) × (List Derivation) )
   let errorMsg := s!"Parsing error line {st.lineNumber}, column {st.columnNumber} : expected {msg} but found {token}"
   return (errorMsg, st.trace, st.derivations)
 
+def skipComment (index : Nat) (st : ParsingState) : Nat := Id.run do
+  let mut count := 0
+  for i in [index:st.stop] do
+    let c := st.source.get! ⟨ i ⟩
+    count := count + 1
+    if c = '\n' then
+      break
+  return count
+
 def skip : PState Unit := do
   let st ← get
   let mut count := 0
   let mut lines := 0
   let mut column := st.columnNumber
   for i in [st.index:st.stop] do
-    -- let c := if let some c := st.source.get? ⟨ i ⟩  then c else panic s!"Indexing error in skip"
     let c := st.source.get! ⟨ i ⟩
     if c = '\n' then
       count := count + 1
@@ -85,12 +93,21 @@ def skip : PState Unit := do
     else if c = '\t' then
       count := count + 1
       column := column + 8
+    else if c = '/' && st.source.get! ⟨ i + 1 ⟩ = '/' then
+      count := count + skipComment (st.index + count) (← get)
+      lines := lines + 1
+      column := 0
     else break
   set { st with
     index := st.index + count,
     lineNumber := st.lineNumber + lines,
     columnNumber := column
     }
+
+def done? : PState Bool := do
+  skip
+  let st ← get
+  if st.index >= st.stop then return true else return false
 
 def parseItem (keyword : String) : PState Unit := do
   skip
@@ -139,12 +156,28 @@ def parseItems (keywords : List String) : PState Unit := do
   for i in [:keywords.length] do
     parseItem <| keywords.get! i
 
+def parseFId : PState String := do
+  skip
+  let st ← get
+  let mut token := ""
+  for i in [st.index:st.stop] do
+    let c := st.source.get! ⟨ i ⟩
+    if c.isAlphanum || c = '_' || c = '.' || c = '"' || c = '<' || c = '>' then token := token.push c
+    else break
+  if token.length != 0 then
+    set { st with
+      index := st.index + token.length,
+      columnNumber := st.columnNumber + token.length
+    }
+    return token
+  else
+    throw <| ← error s!"Id"
+
 def parseId : PState String := do
   skip
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    --let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in parseId"
     let c := st.source.get! ⟨ i ⟩
     if c.isAlphanum || c = '_' || c = '.' then token := token.push c
     else break
@@ -162,7 +195,6 @@ def parseDecimal : PState Nat := do
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    --let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in parseDecimal"
     let c := st.source.get! ⟨ i ⟩
     if c.isDigit then token := token.push c
     else break
@@ -179,11 +211,12 @@ def isHexDigit (c : Char) : Bool :=
   c.val ≥ 48 && c.val ≤ 57 || c.val ≥ 65 && c.val ≤ 70 || c.val ≥ 97 && c.val ≤ 102
 
 def toNatHex (s : String) : Nat :=
-  s.foldl (fun n c =>  n*16 + (
+  let r := s.foldl (fun n c =>  n*16 + (
     if c.isDigit then c.toNat - '0'.toNat
     else
       if c.val <= 70 then 10 + (c.toNat - 'A'.toNat)
       else 10 + (c.toNat - 'a'.toNat))) 0
+  r
 
 def parseHexaDecimal : PState Nat := do
   skip
@@ -191,7 +224,6 @@ def parseHexaDecimal : PState Nat := do
   let st ← get
   let mut token := ""
   for i in [st.index:st.stop] do
-    --let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in parseDecimal"
     let c := st.source.get! ⟨ i ⟩
     if isHexDigit c then token := token.push c
     else break
@@ -211,7 +243,6 @@ def parseString : PState String := do
   let mut token := ""
   let mut escaped := false
   for i in [st.index:st.stop] do
-    --let c := if let some c := st.source.get? ⟨ i ⟩ then c else panic s!"Indexing error in parseString"
     let c := st.source.get! ⟨ i ⟩
     if c = '"' then
       if escaped then
@@ -305,4 +336,7 @@ def parseListNoSep (openingMark closingMark : String) (parse : PState T) : PStat
   parseItem closingMark
   return attrs
 
-end StableHLO
+def parseDecimals : PState (List Nat) := do
+  parseList "[" "]" "," parseDecimal
+
+end StableHLO.Parsing
