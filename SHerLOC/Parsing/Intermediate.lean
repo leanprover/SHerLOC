@@ -11,6 +11,35 @@ import SHerLOC.Parsing.Constants
 
 namespace StableHLO.Parsing
 
+def parseStableHLORecordFieldValue : PState (StableHLORecordFieldValue) := do
+  if (← is "[") then
+    let value ← parseDecimals
+    return StableHLORecordFieldValue.many value
+  else if (← isDigit) then
+    let value ← parseDecimal
+    return StableHLORecordFieldValue.one value
+  else if (← isParse "true") then
+    return StableHLORecordFieldValue.bool true
+  else if (← isParse "false") then
+    return StableHLORecordFieldValue.bool false
+  else
+    let type ← parseFloatType
+    return StableHLORecordFieldValue.type type
+
+def parseStableHLORecordField : PState (StableHLORecordField) := do
+  push "parseStableHLORecordField"
+  let name ← parseId
+  parseItem "="
+  let value ← parseStableHLORecordFieldValue
+  pop "parseStableHLORecordField"
+  return StableHLORecordField.mk name value
+
+def parseRecord : PState (List StableHLORecordField) := do
+  push "parseRecord"
+  let r ← parseList "<" ">" "," parseStableHLORecordField
+  pop "parseRecord"
+  return r
+
 mutual
 
   partial def parseLiteral : PState Literal := do
@@ -19,7 +48,7 @@ mutual
       return Literal.element <| ElementLiteral.floatLiteral <| ← parseFloatLiteral
     if ← isChar 'd' then
       return Literal.tensor <| ← parseTensorLiteral
-    if (← isChar 't') || (← isChar 'f') then
+    if (← is "tr") || (← is "fa") then
       return Literal.element <| ElementLiteral.booleanLiteral <| ← parseBooleanLiteral
     if (← isChar '(') then
       return Literal.element <| ElementLiteral.complexLiteral <| ← parseComplexLiteral
@@ -48,7 +77,7 @@ mutual
     if ← isChar '@' then
       return Literal.func <| ← parseFuncId
 
-    throw <| ← error "literal"
+    throw <| (← error "literal")
 
   partial def parseConstant : PState Constant := do
     push "parseConstant"

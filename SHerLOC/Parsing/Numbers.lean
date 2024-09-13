@@ -248,26 +248,6 @@ def parseArrayLiteral : PState ArrayLiteral := do
     return ArrayLiteral.array1 r
   throw <| ← error "array literal"
 
-def parseStableHLORecordFieldValue : PState (StableHLORecordFieldValue) := do
-  if (← is "[") then
-    let value ← parseDecimals
-    return StableHLORecordFieldValue.many value
-  else
-    let value ← parseDecimal
-    return StableHLORecordFieldValue.one value
-
-def parseStableHLORecordField : PState (StableHLORecordField) := do
-  let name ← parseId
-  parseItem "="
-  let value ← parseStableHLORecordFieldValue
-  return { name, value}
-
-def parseRecord : PState (List StableHLORecordField) := do
-  push "parseRecord"
-  let r ← parseList "<" ">" "," parseStableHLORecordField
-  pop "parseRecord"
-  return r
-
 def parseConvolutionMode : PState ConvolutionMode := do
   push "parseConvolutionMode"
   let mut r := none

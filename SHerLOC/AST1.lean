@@ -145,16 +145,6 @@ inductive ArrayLiteral where
   | array1 (literal : List BooleanLiteral)
   deriving Repr, Inhabited, Nonempty
 
-inductive StableHLORecordFieldValue where
-  | one (literal : Nat)
-  | many (literal : List Nat)
-  deriving Repr, Inhabited, Nonempty
-
-structure StableHLORecordField where
-  name : String
-  value : StableHLORecordFieldValue
-  deriving Repr, Inhabited, Nonempty
-
 inductive ConvolutionMode where
   | i
   | o
@@ -265,6 +255,17 @@ inductive SType where
 
 mutual
 
+  inductive StableHLORecordFieldValue where
+    | one (literal : Nat)
+    | many (literal : List Nat)
+    | type (literal : FloatType)
+    | bool (literal : Bool)
+    deriving Repr, Inhabited, Nonempty
+
+  inductive StableHLORecordField where
+    | mk (name : String) (value : StableHLORecordFieldValue)
+    deriving Repr, Inhabited, Nonempty
+
   inductive Literal where
     | enum (literal : EnumLiteral)
     | element (literal : ElementLiteral)
@@ -276,7 +277,6 @@ mutual
     | list (literal : List Literal)
     | dictionary (literal : List Attribute)
     | array (literal : ArrayLiteral)
-
     deriving Repr, Inhabited, Nonempty
 
   inductive Constant where

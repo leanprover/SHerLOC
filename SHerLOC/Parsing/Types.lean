@@ -50,6 +50,7 @@ def tryParseFloatType : PState (Option FloatType) := do
     if ← isParse "f8E5M2" then r := some FloatType.f8E5M2
   }
   if ← isParse "bf16" then r := some FloatType.bf16
+  if ← isParse "tf32" then r := some FloatType.tf32
   pop "tryParseFloatType"
   return r
 
