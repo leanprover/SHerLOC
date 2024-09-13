@@ -178,14 +178,13 @@ inductive Literal where
   | string (literal : String)
   | stableHLORecord (literal : List StableHLORecordField)
   | convolution (literal : Convolution)
+  | func (literal : FuncId)
+  | list (literal : List Literal)
 
   | special
   | use_global_device_ids
   | array (literal : ArrayLiteral)
-  | experiment1 (literal : List FuncId)
-  | experiment2 (literal : List (List FuncId))
-  | experiment3 (literal : List EnumLiteral)
-  | func (literal : FuncId)
+
   deriving Repr, Inhabited, Nonempty
 
 structure IntegerType where

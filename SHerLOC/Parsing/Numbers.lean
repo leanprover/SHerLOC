@@ -232,25 +232,6 @@ def parseEnumLiteral : PState EnumLiteral := do
     return res
   else throw <| ← error "enumeration"
 
-def parseEnumLiteral' : PState EnumLiteral := do
-  push "parseEnumLiteral'"
-  parseItem "#stablehlo"
-  parseItem "<"
-  let mut r := none
-  if ← isParse "comparison_direction" then r := EnumLiteral.comparisonDirection <| ← parseComparisonDirection
-  if ← isParse "comparison_type" then r := EnumLiteral.compareType <| ← parseCompareType
-  if ← isParse "precision" then r := EnumLiteral.precisionConfig <| ← parsePrecisionConfig
-  if ← isParse "fft_type" then r := EnumLiteral.fftType <| ← parseFftType
-  if ← isParse "channel_type" then r := EnumLiteral.channelType <| ← parseChannelType
-  if ← isParse "rng_distribution" then r := EnumLiteral.rngDistribution <| ← parseRngDistribution
-  if ← isParse "rng_algorithm" then r := EnumLiteral.rngAlgorithm <| ← parseRngAlgorithm
-  if ← isParse "transpose" then r := EnumLiteral.transposeA <| ← parseTransposeA
-  if let some res := r then
-    parseItem ">"
-    pop "parseEnumLiteral'"
-    return res
-  else throw <| ← error "enumeration"
-
 def parseArrayLiteral : PState ArrayLiteral := do
   parseItems ["array", "<"]
   if ← isParse "i64" then
@@ -266,15 +247,6 @@ def parseArrayLiteral : PState ArrayLiteral := do
     parseItem ">"
     return ArrayLiteral.array1 r
   throw <| ← error "array literal"
-
-def parseExperiment1 : PState (List FuncId) := do
-  parseList "[" "]" "," parseFuncId
-
-def parseExperiment2 : PState (List (List FuncId)) := do
-  parseList "[" "]" "," parseExperiment1
-
-def parseExperiment3 : PState (List EnumLiteral) := do
-  parseList "[" "]" "," parseEnumLiteral'
 
 def parseStableHLORecordFieldValue : PState (StableHLORecordFieldValue) := do
   if (← is "[") then
@@ -328,7 +300,7 @@ def parseConvolution : PState Convolution := do
   pop "parseConvolution"
   return { lhs, rhs, result }
 
-def parseLiteral : PState Literal := do
+partial def parseLiteral : PState Literal := do
   skip
   if (← isDigit) || (← isChar '+') || (← isChar '-') then
     return Literal.element <| ElementLiteral.floatLiteral <| ← parseFloatLiteral
@@ -354,15 +326,8 @@ def parseLiteral : PState Literal := do
     } else return Literal.enum <| ← parseEnumLiteral
   }
 
-  if ← isChar '[' then {
-
-    if ← is "[[" then
-      return Literal.experiment2 <| ← parseExperiment2
-    if ← is "[#" then
-      return Literal.experiment3 <| ← parseExperiment3
-    if ← is "[" then
-      return Literal.experiment1 <| ← parseExperiment1
-  }
+  if ← isChar '[' then
+    return Literal.list <| ← parseList "[" "]" "," parseLiteral
 
   if ← isChar '{' then
     flyOver "{" "}"; return Literal.special -- throw <| ← error "literal"
