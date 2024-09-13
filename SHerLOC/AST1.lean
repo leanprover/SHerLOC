@@ -68,7 +68,7 @@ inductive ElementLiteral where
   | booleanLiteral (literal : BooleanLiteral)
   | floatLiteral (literal : FloatLiteral)
   | complexLiteral (literal : ComplexLiteral)
-  | stringLiteral (literal : String) -- tensors can be specified with very long strings
+  | stringLiteral (literal : String)
   deriving Repr, Inhabited, Nonempty
 
 inductive DenseLiteral where
@@ -171,22 +171,6 @@ structure Convolution where
   result : List ConvolutionMode
   deriving Repr, Inhabited, Nonempty
 
-inductive Literal where
-  | enum (literal : EnumLiteral)
-  | element (literal : ElementLiteral)
-  | tensor (literal : TensorLiteral)
-  | string (literal : String)
-  | stableHLORecord (literal : List StableHLORecordField)
-  | convolution (literal : Convolution)
-  | func (literal : FuncId)
-  | list (literal : List Literal)
-
-  | special
-  | use_global_device_ids
-  | array (literal : ArrayLiteral)
-
-  deriving Repr, Inhabited, Nonempty
-
 structure IntegerType where
   sign : Signedness
   size : IntegerSize
@@ -277,15 +261,32 @@ inductive SType where
   | nonValueType (t : NonValueType)
   deriving Repr, Inhabited, Nonempty
 
-structure Constant where
-  literal : Literal
-  typ : Option SType
-  deriving Repr, Inhabited, Nonempty
+mutual
 
-structure Attribute where
-  id : AttrId
-  constant : Constant
-  deriving Repr, Inhabited, Nonempty
+  inductive Literal where
+    | enum (literal : EnumLiteral)
+    | element (literal : ElementLiteral)
+    | tensor (literal : TensorLiteral)
+    | string (literal : String)
+    | stableHLORecord (literal : List StableHLORecordField)
+    | convolution (literal : Convolution)
+    | func (literal : FuncId)
+    | list (literal : List Literal)
+    | dictionary (literal : List Attribute)
+    | use_global_device_ids
+    | array (literal : ArrayLiteral)
+
+    deriving Repr, Inhabited, Nonempty
+
+  inductive Constant where
+    | mk (literal : Literal) (typ : Option SType)
+    deriving Repr, Inhabited, Nonempty
+
+  inductive Attribute where
+    | mk (id : AttrId) (constant : Constant)
+    deriving Repr, Inhabited, Nonempty
+
+end
 
 structure FuncInput where
   id : FuncId

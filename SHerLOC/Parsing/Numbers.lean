@@ -300,41 +300,4 @@ def parseConvolution : PState Convolution := do
   pop "parseConvolution"
   return { lhs, rhs, result }
 
-partial def parseLiteral : PState Literal := do
-  skip
-  if (← isDigit) || (← isChar '+') || (← isChar '-') then
-    return Literal.element <| ElementLiteral.floatLiteral <| ← parseFloatLiteral
-  if ← isChar 'd' then
-    return Literal.tensor <| ← parseTensorLiteral
-  if (← isChar 't') || (← isChar 'f') then
-    return Literal.element <| ElementLiteral.booleanLiteral <| ← parseBooleanLiteral
-  if (← isChar '(') then
-    return Literal.element <| ElementLiteral.complexLiteral <| ← parseComplexLiteral
-  if ← isChar '"' then
-    return Literal.string <| ← parseStringLiteral
-  if ← isChar 'a' then
-    return Literal.array <| ← parseArrayLiteral
-
-  if ← isParse "#stablehlo" then {
-    if (← isParse ".") then {
-      if ← isParse "conv" then return Literal.convolution <| ← parseConvolution
-      if ← isParse "dot_algorithm" then return Literal.stableHLORecord <| ← parseRecord
-      if ← isParse "dot" then return Literal.stableHLORecord <| ← parseRecord
-      if ← isParse "channel_handle" then return Literal.stableHLORecord <| ← parseRecord
-      if ← isParse "scatter" then return Literal.stableHLORecord <| ← parseRecord
-      if ← isParse "gather" then return Literal.stableHLORecord <| ← parseRecord
-    } else return Literal.enum <| ← parseEnumLiteral
-  }
-
-  if ← isChar '[' then
-    return Literal.list <| ← parseList "[" "]" "," parseLiteral
-
-  if ← isChar '{' then
-    flyOver "{" "}"; return Literal.special -- throw <| ← error "literal"
-
-  if ← isChar '@' then
-    return Literal.func <| ← parseFuncId
-
-  throw <| ← error "literal"
-
 end StableHLO.Parsing

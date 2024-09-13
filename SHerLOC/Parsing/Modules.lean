@@ -43,35 +43,15 @@ def parseModule : PState Module := do
     pop "parseModule"
     return r
 
-def parseModules : PState (List Module) := do
+partial def parseModules : PState (List Module) := do
   push "parseModules"
-  parseItems ["\"builtin.module\"", "(", ")"]
-  let mut r : List Module := []
-  if ← is "<{" then
-    reset
-    r := [← parseModule]
-  else
-    parseItems ["(","{"]
-    if ← is "\"builtin.module\"" then
-      r ← parseListAuxNoSep "})" parseModule []
-    else
-      reset
-      r := [← parseModule]
-  push "parseModules"
-  return r
-
-partial def parseMultipleModules : PState (List (List Module)) := do
-  push "parseMultipleModules"
   if (← is "\"builtin.module\"") then
-    let mod ← parseModules
-    let mods ← parseMultipleModules
-    pop "parseMultipleModules"
+    let mod ← parseModule
+    let mods ← parseModules
+    pop "parseModules"
     return mod :: mods
   else
-    pop "parseMultipleModules"
+    pop "parseModules"
     return []
-
-
-
 
 end StableHLO.Parsing

@@ -9,14 +9,4 @@ import SHerLOC.Parsing.Types
 
 namespace StableHLO.Parsing
 
-def parseConstant : PState Constant := do
-  push "parseConstant"
-  let literal ← parseLiteral
-  let mut typ : Option SType := none
-  if ← isParse ":" then
-    typ ← parseType
-  let r : Constant := { literal := literal, typ := typ }
-  pop "parseConstant"
-  return r
-
 end StableHLO.Parsing
