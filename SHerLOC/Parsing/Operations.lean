@@ -5,43 +5,33 @@ Authors: Jean-Baptiste Tristan
 -/
 import SHerLOC.AST1
 import SHerLOC.Parsing.Parser
-import SHerLOC.Parsing.Constants
 import SHerLOC.Parsing.Identifiers
 import SHerLOC.Parsing.Intermediate
 
 namespace StableHLO.Parsing
 
 def parseOpOutputs : PState (List ValueId) := do
-  push "parseOpOutputs"
   let r ← parseListAux "=" "," parseValueIdRes
-  pop "parseOpOutputs"
   return r
 
 def parseInputFuncInput : PState FuncInput := do
-  push "parseInputFuncInput"
   let id ← parseValueId
   parseItem ":"
   let typ ← parseValueType
-  pop "parseInputFuncInput"
   return { id := id , typ := typ }
 
 def parseInputFuncInputs : PState (List FuncInput) := do
-  push "parseInputFuncInputs"
   let r ← parseList "(" ")" "," parseInputFuncInput
-  pop "parseInputFuncInputs"
   return r
 
 def parseReturn : PState Operation := do
-  push "parseReturn"
   let arguments ← parseValueUseList
   parseItem ":"
   let functiontype ← parseFunctionType
   let parseResult := Operation.return arguments functiontype
-  pop "parseReturn"
   return parseResult
 
 def parseCall (outputs : List ValueId) : PState Operation := do
-  push "parseCall"
   parseItem "\"func.call\""
   let arguments ← parseValueUseList
   parseItem "<{"
@@ -52,7 +42,6 @@ def parseCall (outputs : List ValueId) : PState Operation := do
   parseItem ":"
   let typ ← parseFunctionType
   let r := Operation.call callee arguments outputs typ
-  pop "parseCall"
   return r
 
 def parseOpCode : PState OpCode := do
@@ -175,7 +164,6 @@ def parseOpCode : PState OpCode := do
 mutual
 
   partial def parseInputFunc : PState InputFunc := do
-    push "parseInputFunc"
     parseItem "{"
     let mut funcInputs : List FuncInput := []
     if ← is "^" then
@@ -184,23 +172,17 @@ mutual
       parseItem ":"
     let body ← parseInputFuncBody
     parseItem "}"
-    pop "parseInputFunc"
     return InputFunc.mk funcInputs body
 
   partial def parseOpInputFuncs : PState (List InputFunc) := do
-    push "parseOpInputFuncs"
     let r ← parseList "(" ")" "," parseInputFunc
-    pop "parseOpInputFuncs"
     return r
 
   partial def parseOperationDictionaryAttributes : PState (List Attribute) := do
-    push "parseOperationDictionaryAttributes"
     let r ← parseList "<{" "}>" "," parseAttribute
-    pop "parseOperationDictionaryAttributes"
     return r
 
   partial def parseOperationBasic (op : OpCode) (opOutputs : List ValueId) : PState Operation := do
-    push "parseOperationBasic"
     let opInputValues ← parseValueUseList
     let mut opInputAttrs := []
     if ← is "<{" then
@@ -211,11 +193,9 @@ mutual
     parseItem ":"
     let functiontype ← parseFunctionType
     let operation := Operation.stablehlo op opInputValues opInputFuncs opInputAttrs opOutputs functiontype
-    pop "parseOperationBasic"
     return operation
 
   partial def parseOtherDialect (opOutputs : List ValueId) : PState Operation := do
-    push "parseOtherDialect"
     let name ← parseString
     report s!"undocumented operation: {name}"
     let opInputValues ← parseValueUseList
@@ -228,7 +208,6 @@ mutual
     parseItem ":"
     let functiontype ← parseFunctionType
     let operation := Operation.other name opInputValues opInputFuncs opInputAttrs opOutputs functiontype
-    pop "parseOtherDialect"
     return operation
 
 partial def parseStableHLO (opOutputs : List ValueId) : PState Operation := do
@@ -357,14 +336,11 @@ partial def parseStableHLO (opOutputs : List ValueId) : PState Operation := do
   | OpCode.xor => parseOperationBasic OpCode.xor opOutputs
 
   partial def parseOperation : PState Operation := do
-    push "parseOperation"
     if ← isParse "\"func.return\"" then
       let r ← parseReturn
-      pop "parseOperation"
       return r
     if ← isParse "\"stablehlo.return\"" then
       let r ← parseReturn
-      pop "parseOperation"
       return r
     let mut opOutputs := []
     if ← is "%" then
@@ -372,33 +348,26 @@ partial def parseStableHLO (opOutputs : List ValueId) : PState Operation := do
       parseItem "="
     if ← is "\"func.call\"" then
       let r ← parseCall opOutputs
-      pop "parseOperation"
       return r
 
     if ← is "\"check." then
       let r ← parseOtherDialect opOutputs
-      pop "parseOperation"
       return r
 
     if ← is "\"interpreter." then
       let r ← parseOtherDialect opOutputs
-      pop "parseOperation"
       return r
 
     if ← is "\"chlo." then
       let r ← parseOtherDialect opOutputs
-      pop "parseOperation"
       return r
 
     let operation ← parseStableHLO opOutputs
 
-    pop "parseOperation"
     return operation
 
   partial def parseInputFuncBody : PState (List Operation) := do
-    push "parseInputFuncBody"
     let r ← parseListAuxNoSep "}" parseOperation []
-    pop "parseInputFuncBody"
     return r
 
 end

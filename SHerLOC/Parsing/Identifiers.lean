@@ -9,52 +9,36 @@ import SHerLOC.Parsing.Parser
 namespace StableHLO.Parsing
 
 def parseValueId : PState String := do
-  push "parseValueId"
   parseItem "%"
-  let r ← parseId
-  pop "parseValueId"
-  return r
+  parseId
 
 def parseValueIdRes : PState String := do
-  push "parseValueIdRes"
   let r ← parseValueId
   let mut r' := ""
   if ← isParse ":" then
     r' ← parseId
     r' := ":" ++ r'
   let r := r ++ r'
-  pop "parseValueIdRes"
   return r
 
 def parseValueIdOpArg : PState String := do
-  push "parseValueOpArg"
   let r ← parseValueId
   let mut r' := ""
   if ← isParse "#" then
     r' ← parseId
     r' := "#" ++ r'
   let r := r ++ r'
-  pop "parseValueOpArg"
   return r
 
 def parseFuncId : PState String := do
-  push "parseFuncId"
   parseItem "@"
-  let r ← parseFId
-  pop "parseFuncId"
-  return r
+  parseFId
 
 def parseUnusedId : PState String := do
-  push "parseUnusedId"
   parseItem "^"
-  let r ← parseId
-  pop "parseUnusedId"
-  return r
+  parseId
 
 def parseAttrId : PState String := do
-  push "parseAttrId"
-  let r ← parseId
-  pop "parseAttrId"
-  return r
+  parseId
 
 end StableHLO.Parsing

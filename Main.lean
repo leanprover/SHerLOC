@@ -40,13 +40,13 @@ def main (args : List String) : IO UInt32 := do
       return 0
   else if args.length = 1 then
     let file := args[0]!
-    let fp : FilePath := System.mkFilePath ["Tests", file]
+    let fp : FilePath := System.mkFilePath [file]
     let content ← readFile fp
     let content := StableHLO.Parsing.parse content
     match content with
     | .ok p =>
-      let fpAST : FilePath := System.mkFilePath ["Tests", file ++ ".ast"]
-      let fpReport : FilePath := System.mkFilePath ["Tests", file ++ ".report"]
+      let fpAST : FilePath := System.mkFilePath [file ++ ".ast"]
+      let fpReport : FilePath := System.mkFilePath [file ++ ".report"]
       writeFile fpAST s!"{repr p.1}\n"
       writeFile fpReport s!"{p.2.report}\n"
       return 0
