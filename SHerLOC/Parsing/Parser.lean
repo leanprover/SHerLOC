@@ -263,17 +263,6 @@ def parseString : PState String := do
   parseItem "\""
   return token
 
-def flyOver (start stop : String) : PState Unit := do
-  skip
-  parseItem start
-  let st ← get
-  for _ in [st.index:st.stop] do
-    let st ← get
-    if ← isParse "->" then continue
-    if ← is stop then break
-    else set { st with index := st.index + 1, columnNumber := st.columnNumber + 1} -- Incorrect because of \n and \t but this code is temporary
-  parseItem stop
-
 def push (parser : String) : PState Unit := do
   let st ← get
   let traceItem : Trace := { startLine := st.lineNumber, startColumn := st.columnNumber, parser }
