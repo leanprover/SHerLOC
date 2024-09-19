@@ -41,15 +41,10 @@ structure ParsingState where
   columnNumber : Nat
   trace : List Trace            -- For debugging the parser
   derivations : List Derivation -- For debugging the parser
+  report : List String
   deriving Repr, Inhabited, Nonempty
 
 abbrev PState (T : Type) := StateT ParsingState (Except (String × List Trace × List Derivation)) T
-
--- For backtracking at the very beginning of parsing when deciding if there are 1 or more modules
-def reset : PState Unit := do
-  let st ← get
-  let src := st.source
-  set (ParsingState.mk src 0 src.length 1 0 [] [])
 
 def error (msg : String) : PState (String × (List Trace) × (List Derivation) ):= do
   let st ← get
@@ -66,6 +61,11 @@ def error (msg : String) : PState (String × (List Trace) × (List Derivation) )
     else token := token.push c
   let errorMsg := s!"Parsing error line {st.lineNumber}, column {st.columnNumber} : expected {msg} but found {token}"
   return (errorMsg, st.trace, st.derivations)
+
+def report (msg : String) : PState Unit := do
+  let st ← get
+  let msg := s!"line {st.lineNumber}, column {st.columnNumber}: {msg}\n"
+  set { st with report := msg :: st.report}
 
 def skipComment (index : Nat) (st : ParsingState) : Nat := Id.run do
   let mut count := 0

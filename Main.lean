@@ -20,8 +20,11 @@ def main (args : List String) : IO UInt32 := do
       let content := StableHLO.Parsing.parse content
       IO.print s!"Parsing {file}... "
       match content with
-      | .ok _ =>
+      | .ok p =>
         passed := file :: passed
+        let fpReport : FilePath := System.mkFilePath ["Tests", file ++ ".report"]
+        for msg in p.2.report do
+          writeFile fpReport s!"File {file}, {msg}\n"
         IO.println "success"
       | .error _ =>
         failed := file :: failed
@@ -42,7 +45,10 @@ def main (args : List String) : IO UInt32 := do
     let content := StableHLO.Parsing.parse content
     match content with
     | .ok p =>
-      IO.println s!"{repr p}"
+      let fpAST : FilePath := System.mkFilePath ["Tests", file ++ ".ast"]
+      let fpReport : FilePath := System.mkFilePath ["Tests", file ++ ".report"]
+      writeFile fpAST s!"{repr p.1}\n"
+      writeFile fpReport s!"{p.2.report}\n"
       return 0
     | .error e =>
       IO.println s!"{e.2.2}"

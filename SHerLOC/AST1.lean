@@ -294,6 +294,115 @@ structure FuncInput where
   typ : ValueType
   deriving Repr, Inhabited, Nonempty
 
+inductive OpCode where
+| abs
+| add
+| afterAll
+| allGather
+| allReduce
+| allToAll
+| and
+| atan2
+| batchNormGrad
+| batchNormInference
+| batchNormTraining
+| bitcastConvert
+| broadcastInDim
+| case
+| cbrt
+| ceil
+| cholesky
+| clamp
+| collectiveBroadcast
+| collectivePermute
+| compare
+| complex
+| composite
+| concatenate
+| constant
+| convert
+| convolution
+| cosine
+| countLeadingZeros
+| customCall
+| divide
+| dotGeneral
+| dynamicBroadcastInDim
+| dynamicConv
+| dynamicGather
+| dynamicIota
+| dynamicPad
+| dynamicReshape
+| dynamicSlice
+| dynamicUpdateSlice
+| exponential
+| exponentialMinusOne
+| fft
+| floor
+| gather
+| getDimensionSize
+| getTupleElement
+| if
+| imag
+| infeed
+| iota
+| isFinite
+| log
+| logPlusOne
+| logistic
+| map
+| maximum
+| minimum
+| multiply
+| negate
+| not
+| optimizationBarrier
+| or
+| outfeed
+| pad
+| partitionId
+| popcnt
+| power
+| real
+| realDynamicSlice
+| recv
+| reduce
+| reducePrecision
+| reduceScatter
+| reduceWindow
+| remainder
+| replicaId
+| reshape
+| reverse
+| rng
+| rngBitGenerator
+| roundNearestAfz
+| roundNearestEven
+| rsqrt
+| scatter
+| select
+| selectAndScatter
+| send
+| shiftLeft
+| shiftRightArithmetic
+| shiftRightLogical
+| sign
+| sine
+| slice
+| sort
+| sqrt
+| subtract
+| tan
+| tanh
+| transpose
+| triangularSolve
+| tuple
+| uniformDequantize
+| uniformQuantize
+| while
+| xor
+deriving Repr, Inhabited, Nonempty
+
 mutual
 
   inductive InputFunc where
@@ -304,6 +413,14 @@ mutual
 
   inductive Operation where
     | stablehlo
+      (opCode : OpCode)
+      (inputValues : List ValueId)
+      (inputFunctions : List InputFunc)
+      (inputAttributes : List Attribute)
+      (outputs : List ValueId)
+      (signature : FunctionType)
+    | tanh (operand : ValueId) (typ : FunctionType)
+    | other
       (name : String)
       (inputValues : List ValueId)
       (inputFunctions : List InputFunc)

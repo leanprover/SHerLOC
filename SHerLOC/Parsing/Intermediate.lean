@@ -55,10 +55,12 @@ mutual
     if ← isChar '"' then
       return Literal.string <| ← parseStringLiteral
     if ← isChar 'a' then
+      report "literal array"
       return Literal.array <| ← parseArrayLiteral
 
     if ← isParse "#stablehlo" then {
       if (← isParse ".") then {
+        report "literal record"
         if ← isParse "conv" then return Literal.convolution <| ← parseConvolution
         if ← isParse "dot_algorithm" then return Literal.stableHLORecord <| ← parseRecord
         if ← isParse "dot" then return Literal.stableHLORecord <| ← parseRecord
@@ -69,12 +71,15 @@ mutual
     }
 
     if ← isChar '[' then
+      report "literal list"
       return Literal.list <| ← parseList "[" "]" "," parseLiteral
 
     if ← isChar '{' then
+      report "literal attribute"
       return Literal.dictionary <| ← parseAttributes
 
     if ← isChar '@' then
+      report "literal function"
       return Literal.func <| ← parseFuncId
 
     throw <| (← error "literal")
@@ -92,6 +97,7 @@ mutual
   partial def parseAttribute : PState Attribute := do
     push "parseAttribute"
     if ← isParse "use_global_device_ids" then
+      report "literal use_global_device_ids"
       pop "parseAttribute"
       return Attribute.mk "use_global_device_ids" <| Constant.mk (Literal.element (ElementLiteral.booleanLiteral BooleanLiteral.true)) none
     else
