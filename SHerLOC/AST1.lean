@@ -419,7 +419,7 @@ mutual
       (inputAttributes : List Attribute)
       (outputs : List ValueId)
       (signature : FunctionType)
-    | tanh (operand : ValueId) (typ : FunctionType)
+    | tanh (result operand : ValueId) (typ : FunctionType)
     | other
       (name : String)
       (inputValues : List ValueId)

@@ -161,6 +161,17 @@ def parseOpCode : PState OpCode := do
     return op
   else throw <| (← error "op code")
 
+def parseTanh (opOutputs : List ValueId) : PState Operation := do
+    let opInputValues ← parseValueUseList
+    -- could provide better error messages by ensuring not dictionnary
+    if opOutputs.length ≠ 1 then throw <| (← error "tanh operation: wrong number of arguments")
+    if opInputValues.length ≠ 1 then throw <| (← error "tanh operation: wrong number of arguments")
+    else {
+      parseItem ":"
+      let functionType ← parseFunctionType
+      return Operation.tanh (opOutputs.get! 0) (opInputValues.get! 0) functionType
+    }
+
 mutual
 
   partial def parseInputFunc : PState InputFunc := do
@@ -315,16 +326,7 @@ partial def parseStableHLO (opOutputs : List ValueId) : PState Operation := do
   | OpCode.sqrt => parseOperationBasic OpCode.sqrt opOutputs
   | OpCode.subtract => parseOperationBasic OpCode.subtract opOutputs
   | OpCode.tan => parseOperationBasic OpCode.tan opOutputs
-  | OpCode.tanh => {
-    let opInputValues ← parseValueUseList
-    -- could provide better error messages by ensuring not dictionnary
-    if opInputValues.length ≠ 1 then throw <| (← error "tanh operation: wrong number of arguments")
-    else {
-      parseItem ":"
-      let functionType ← parseFunctionType
-      return Operation.tanh (opInputValues.get! 0) functionType
-    }
-  }
+  | OpCode.tanh => parseTanh opOutputs
   | OpCode.transpose => parseOperationBasic OpCode.transpose opOutputs
   | OpCode.triangularSolve => parseOperationBasic OpCode.triangularSolve opOutputs
   | OpCode.tuple => parseOperationBasic OpCode.tuple opOutputs
@@ -367,8 +369,7 @@ partial def parseStableHLO (opOutputs : List ValueId) : PState Operation := do
     return operation
 
   partial def parseInputFuncBody : PState (List Operation) := do
-    let r ← parseListAuxNoSep "}" parseOperation []
-    return r
+    parseListAuxNoSep "}" parseOperation []
 
 end
 
