@@ -24,29 +24,27 @@ def parseInputFuncInputs : PState (List FuncInput) := do
   let r ← parseList "(" ")" "," parseInputFuncInput
   return r
 
-def parseReturn : PState Operation := do
-  let arguments ← parseValueUseList
-  parseItem ":"
-  let functiontype ← parseFunctionType
-  let parseResult := Operation.return arguments functiontype
-  return parseResult
+-- def parseReturn : PState Operation := do
+--   let arguments ← parseValueUseList
+--   parseItem ":"
+--   let functiontype ← parseFunctionType
+--   let parseResult := Operation.return arguments functiontype
+--   return parseResult
 
-def parseCall (outputs : List ValueId) : PState Operation := do
-  parseItem "\"func.call\""
-  let arguments ← parseValueUseList
-  parseItem "<{"
-  parseItem "callee"
-  parseItem "="
-  let callee ← parseFuncId
-  parseItem "}>"
-  parseItem ":"
-  let typ ← parseFunctionType
-  let r := Operation.call callee arguments outputs typ
-  return r
+-- def parseCall (outputs : List ValueId) : PState Operation := do
+--   parseItem "\"func.call\""
+--   let arguments ← parseValueUseList
+--   parseItem "<{"
+--   parseItem "callee"
+--   parseItem "="
+--   let callee ← parseFuncId
+--   parseItem "}>"
+--   parseItem ":"
+--   let typ ← parseFunctionType
+--   let r := Operation.call callee arguments outputs typ
+--   return r
 
-def parseOpCode : PState OpCode := do
-  parseItems ["\"", "stablehlo."]
-  let opCodeString ← parseId
+def toOpCode (opCodeString : String) : PState OpCode := do
   let mut opCode : Option OpCode := none
   match opCodeString with
   | "abs" => opCode := some OpCode.abs
@@ -127,6 +125,7 @@ def parseOpCode : PState OpCode := do
   | "remainder" => opCode := some OpCode.remainder
   | "replica_id" => opCode := some OpCode.replicaId
   | "reshape" => opCode := some OpCode.reshape
+  | "return" => opCode := some OpCode.return
   | "reverse" => opCode := some OpCode.reverse
   | "rng" => opCode := some OpCode.rng
   | "rng_bit_generator" => opCode := some OpCode.rngBitGenerator
@@ -157,20 +156,24 @@ def parseOpCode : PState OpCode := do
   | "xor" => opCode := some OpCode.xor
   | _ => opCode := none
   if let some op := opCode then
-    parseItem "\""
     return op
   else throw <| (← error "op code")
 
-def parseTanh (opOutputs : List ValueId) : PState Operation := do
-    let opInputValues ← parseValueUseList
+structure PreOperation where
+  dialect : String
+  operation : String
+  inputValues : List ValueId
+  inputFunctions : List InputFunc
+  inputAttributes : List Attribute
+  outputs : List ValueId
+  signature : FunctionType
+  deriving Repr, Inhabited, Nonempty
+
+def parseTanh (p : PreOperation) : PState Operation := do
     -- could provide better error messages by ensuring not dictionnary
-    if opOutputs.length ≠ 1 then throw <| (← error "tanh operation: wrong number of arguments")
-    if opInputValues.length ≠ 1 then throw <| (← error "tanh operation: wrong number of arguments")
-    else {
-      parseItem ":"
-      let functionType ← parseFunctionType
-      return Operation.tanh (opOutputs.get! 0) (opInputValues.get! 0) functionType
-    }
+    if p.outputs.length ≠ 1 then throw <| (← error "tanh operation: wrong number of arguments")
+    if p.inputValues.length ≠ 1 then throw <| (← error "tanh operation: wrong number of arguments")
+    return Operation.tanh (p.outputs.get! 0) (p.inputValues.get! 0) p.signature
 
 mutual
 
@@ -193,180 +196,159 @@ mutual
     let r ← parseList "<{" "}>" "," parseAttribute
     return r
 
-  partial def parseOperationBasic (op : OpCode) (opOutputs : List ValueId) : PState Operation := do
-    let opInputValues ← parseValueUseList
-    let mut opInputAttrs := []
-    if ← is "<{" then
-      opInputAttrs ← parseOperationDictionaryAttributes
-    let mut opInputFuncs := []
-    if ← is "(" then
-      opInputFuncs ← parseOpInputFuncs
-    parseItem ":"
-    let functiontype ← parseFunctionType
-    let operation := Operation.stablehlo op opInputValues opInputFuncs opInputAttrs opOutputs functiontype
-    return operation
+  partial def parseWithoutWFCheck (p : PreOperation) : PState Operation := do
+    return Operation.other p.dialect p.operation p.inputValues p.inputFunctions p.inputAttributes p.outputs p.signature
 
-  partial def parseOtherDialect (opOutputs : List ValueId) : PState Operation := do
-    let name ← parseString
-    report s!"undocumented operation: {name}"
-    let opInputValues ← parseValueUseList
-    let mut opInputAttrs := []
-    if ← is "<{" then
-      opInputAttrs ← parseOperationDictionaryAttributes
-    let mut opInputFuncs := []
-    if ← is "(" then
-      opInputFuncs ← parseOpInputFuncs
-    parseItem ":"
-    let functiontype ← parseFunctionType
-    let operation := Operation.other name opInputValues opInputFuncs opInputAttrs opOutputs functiontype
-    return operation
-
-partial def parseStableHLO (opOutputs : List ValueId) : PState Operation := do
-  let opCode ← parseOpCode
-  match opCode with
-  | OpCode.abs => parseOperationBasic OpCode.abs opOutputs
-  | OpCode.add => parseOperationBasic OpCode.add opOutputs
-  | OpCode.afterAll => parseOperationBasic OpCode.afterAll opOutputs
-  | OpCode.allGather => parseOperationBasic OpCode.allGather opOutputs
-  | OpCode.allReduce => parseOperationBasic OpCode.allReduce opOutputs
-  | OpCode.allToAll => parseOperationBasic OpCode.allToAll opOutputs
-  | OpCode.and => parseOperationBasic OpCode.and opOutputs
-  | OpCode.atan2 => parseOperationBasic OpCode.atan2 opOutputs
-  | OpCode.batchNormGrad => parseOperationBasic OpCode.batchNormGrad opOutputs
-  | OpCode.batchNormInference => parseOperationBasic OpCode.batchNormInference opOutputs
-  | OpCode.batchNormTraining => parseOperationBasic OpCode.batchNormTraining opOutputs
-  | OpCode.bitcastConvert => parseOperationBasic OpCode.bitcastConvert opOutputs
-  | OpCode.broadcastInDim => parseOperationBasic OpCode.broadcastInDim opOutputs
-  | OpCode.case => parseOperationBasic OpCode.case opOutputs
-  | OpCode.cbrt => parseOperationBasic OpCode.cbrt opOutputs
-  | OpCode.ceil => parseOperationBasic OpCode.ceil opOutputs
-  | OpCode.cholesky => parseOperationBasic OpCode.cholesky opOutputs
-  | OpCode.clamp => parseOperationBasic OpCode.clamp opOutputs
-  | OpCode.collectiveBroadcast => parseOperationBasic OpCode.collectiveBroadcast opOutputs
-  | OpCode.collectivePermute => parseOperationBasic OpCode.collectivePermute opOutputs
-  | OpCode.compare => parseOperationBasic OpCode.compare opOutputs
-  | OpCode.complex => parseOperationBasic OpCode.complex opOutputs
-  | OpCode.composite => parseOperationBasic OpCode.composite opOutputs
-  | OpCode.concatenate => parseOperationBasic OpCode.concatenate opOutputs
-  | OpCode.constant => parseOperationBasic OpCode.constant opOutputs
-  | OpCode.convert => parseOperationBasic OpCode.convert opOutputs
-  | OpCode.convolution => parseOperationBasic OpCode.convolution opOutputs
-  | OpCode.cosine => parseOperationBasic OpCode.cosine opOutputs
-  | OpCode.countLeadingZeros => parseOperationBasic OpCode.countLeadingZeros opOutputs
-  | OpCode.customCall => parseOperationBasic OpCode.customCall opOutputs
-  | OpCode.divide => parseOperationBasic OpCode.divide opOutputs
-  | OpCode.dotGeneral => parseOperationBasic OpCode.dotGeneral opOutputs
-  | OpCode.dynamicBroadcastInDim => parseOperationBasic OpCode.dynamicBroadcastInDim opOutputs
-  | OpCode.dynamicConv => parseOperationBasic OpCode.dynamicConv opOutputs
-  | OpCode.dynamicGather => parseOperationBasic OpCode.dynamicGather opOutputs
-  | OpCode.dynamicIota => parseOperationBasic OpCode.dynamicIota opOutputs
-  | OpCode.dynamicPad => parseOperationBasic OpCode.dynamicPad opOutputs
-  | OpCode.dynamicReshape => parseOperationBasic OpCode.dynamicReshape opOutputs
-  | OpCode.dynamicSlice => parseOperationBasic OpCode.dynamicSlice opOutputs
-  | OpCode.dynamicUpdateSlice => parseOperationBasic OpCode.dynamicUpdateSlice opOutputs
-  | OpCode.exponential => parseOperationBasic OpCode.exponential opOutputs
-  | OpCode.exponentialMinusOne => parseOperationBasic OpCode.exponentialMinusOne opOutputs
-  | OpCode.fft => parseOperationBasic OpCode.fft opOutputs
-  | OpCode.floor => parseOperationBasic OpCode.floor opOutputs
-  | OpCode.gather => parseOperationBasic OpCode.gather opOutputs
-  | OpCode.getDimensionSize => parseOperationBasic OpCode.getDimensionSize opOutputs
-  | OpCode.getTupleElement => parseOperationBasic OpCode.getTupleElement opOutputs
-  | OpCode.if => parseOperationBasic OpCode.if opOutputs
-  | OpCode.imag => parseOperationBasic OpCode.imag opOutputs
-  | OpCode.infeed =>
-    report "Semantics implementation defined infeed"
-    parseOperationBasic OpCode.infeed opOutputs
-  | OpCode.iota => parseOperationBasic OpCode.iota opOutputs
-  | OpCode.isFinite => parseOperationBasic OpCode.isFinite opOutputs
-  | OpCode.log => parseOperationBasic OpCode.log opOutputs
-  | OpCode.logPlusOne => parseOperationBasic OpCode.logPlusOne opOutputs
-  | OpCode.logistic => parseOperationBasic OpCode.logistic opOutputs
-  | OpCode.map => parseOperationBasic OpCode.map opOutputs
-  | OpCode.maximum => parseOperationBasic OpCode.maximum opOutputs
-  | OpCode.minimum => parseOperationBasic OpCode.minimum opOutputs
-  | OpCode.multiply => parseOperationBasic OpCode.multiply opOutputs
-  | OpCode.negate => parseOperationBasic OpCode.negate opOutputs
-  | OpCode.not => parseOperationBasic OpCode.not opOutputs
-  | OpCode.optimizationBarrier => parseOperationBasic OpCode.optimizationBarrier opOutputs
-  | OpCode.or => parseOperationBasic OpCode.or opOutputs
-  | OpCode.outfeed => parseOperationBasic OpCode.outfeed opOutputs
-  | OpCode.pad => parseOperationBasic OpCode.pad opOutputs
-  | OpCode.partitionId => parseOperationBasic OpCode.partitionId opOutputs
-  | OpCode.popcnt => parseOperationBasic OpCode.popcnt opOutputs
-  | OpCode.power => parseOperationBasic OpCode.power opOutputs
-  | OpCode.real => parseOperationBasic OpCode.real opOutputs
-  | OpCode.realDynamicSlice => parseOperationBasic OpCode.real opOutputs -- Undocumented
-  | OpCode.recv => parseOperationBasic OpCode.recv opOutputs
-  | OpCode.reduce => parseOperationBasic OpCode.reduce opOutputs
-  | OpCode.reducePrecision => parseOperationBasic OpCode.reducePrecision opOutputs
-  | OpCode.reduceScatter => parseOperationBasic OpCode.reduceScatter opOutputs
-  | OpCode.reduceWindow => parseOperationBasic OpCode.reduceWindow opOutputs
-  | OpCode.remainder => parseOperationBasic OpCode.remainder opOutputs
-  | OpCode.replicaId => parseOperationBasic OpCode.replicaId opOutputs
-  | OpCode.reshape => parseOperationBasic OpCode.reshape opOutputs
-  | OpCode.reverse => parseOperationBasic OpCode.reverse opOutputs
-  | OpCode.rng =>
-    report "explore for deprecation rng"
-    parseOperationBasic OpCode.rng opOutputs
-  | OpCode.rngBitGenerator => parseOperationBasic OpCode.rngBitGenerator opOutputs
-  | OpCode.roundNearestAfz => parseOperationBasic OpCode.roundNearestAfz opOutputs
-  | OpCode.roundNearestEven => parseOperationBasic OpCode.roundNearestEven opOutputs
-  | OpCode.rsqrt => parseOperationBasic OpCode.rsqrt opOutputs
-  | OpCode.scatter => parseOperationBasic OpCode.scatter opOutputs
-  | OpCode.select => parseOperationBasic OpCode.select opOutputs
-  | OpCode.selectAndScatter => parseOperationBasic OpCode.selectAndScatter opOutputs
-  | OpCode.send => parseOperationBasic OpCode.send opOutputs
-  | OpCode.shiftLeft => parseOperationBasic OpCode.shiftLeft opOutputs
-  | OpCode.shiftRightArithmetic => parseOperationBasic OpCode.shiftRightArithmetic opOutputs
-  | OpCode.shiftRightLogical => parseOperationBasic OpCode.shiftRightLogical opOutputs
-  | OpCode.sign => parseOperationBasic OpCode.sign opOutputs
-  | OpCode.sine => parseOperationBasic OpCode.sine opOutputs
-  | OpCode.slice => parseOperationBasic OpCode.slice opOutputs
-  | OpCode.sort => parseOperationBasic OpCode.sort opOutputs
-  | OpCode.sqrt => parseOperationBasic OpCode.sqrt opOutputs
-  | OpCode.subtract => parseOperationBasic OpCode.subtract opOutputs
-  | OpCode.tan => parseOperationBasic OpCode.tan opOutputs
-  | OpCode.tanh => parseTanh opOutputs
-  | OpCode.transpose => parseOperationBasic OpCode.transpose opOutputs
-  | OpCode.triangularSolve => parseOperationBasic OpCode.triangularSolve opOutputs
-  | OpCode.tuple => parseOperationBasic OpCode.tuple opOutputs
-  | OpCode.uniformDequantize => parseOperationBasic OpCode.uniformDequantize opOutputs
-  | OpCode.uniformQuantize => parseOperationBasic OpCode.uniformQuantize opOutputs
-  | OpCode.while =>
-    report "semantics not fully decided "
-    parseOperationBasic OpCode.while opOutputs
-  | OpCode.xor => parseOperationBasic OpCode.xor opOutputs
+  partial def toStableHLO (p : PreOperation) : PState Operation := do
+    let opCode ← toOpCode p.operation
+    match opCode with
+    | OpCode.abs => parseWithoutWFCheck p
+    | OpCode.add => parseWithoutWFCheck p
+    | OpCode.afterAll => parseWithoutWFCheck p
+    | OpCode.allGather => parseWithoutWFCheck p
+    | OpCode.allReduce => parseWithoutWFCheck p
+    | OpCode.allToAll => parseWithoutWFCheck p
+    | OpCode.and => parseWithoutWFCheck p
+    | OpCode.atan2 => parseWithoutWFCheck p
+    | OpCode.batchNormGrad => parseWithoutWFCheck p
+    | OpCode.batchNormInference => parseWithoutWFCheck p
+    | OpCode.batchNormTraining => parseWithoutWFCheck p
+    | OpCode.bitcastConvert => parseWithoutWFCheck p
+    | OpCode.broadcastInDim => parseWithoutWFCheck p
+    | OpCode.case => parseWithoutWFCheck p
+    | OpCode.cbrt => parseWithoutWFCheck p
+    | OpCode.ceil => parseWithoutWFCheck p
+    | OpCode.cholesky => parseWithoutWFCheck p
+    | OpCode.clamp => parseWithoutWFCheck p
+    | OpCode.collectiveBroadcast => parseWithoutWFCheck p
+    | OpCode.collectivePermute => parseWithoutWFCheck p
+    | OpCode.compare => parseWithoutWFCheck p
+    | OpCode.complex => parseWithoutWFCheck p
+    | OpCode.composite => parseWithoutWFCheck p
+    | OpCode.concatenate => parseWithoutWFCheck p
+    | OpCode.constant => parseWithoutWFCheck p
+    | OpCode.convert => parseWithoutWFCheck p
+    | OpCode.convolution => parseWithoutWFCheck p
+    | OpCode.cosine => parseWithoutWFCheck p
+    | OpCode.countLeadingZeros => parseWithoutWFCheck p
+    | OpCode.customCall => parseWithoutWFCheck p
+    | OpCode.divide => parseWithoutWFCheck p
+    | OpCode.dotGeneral => parseWithoutWFCheck p
+    | OpCode.dynamicBroadcastInDim => parseWithoutWFCheck p
+    | OpCode.dynamicConv => parseWithoutWFCheck p
+    | OpCode.dynamicGather => parseWithoutWFCheck p
+    | OpCode.dynamicIota => parseWithoutWFCheck p
+    | OpCode.dynamicPad => parseWithoutWFCheck p
+    | OpCode.dynamicReshape => parseWithoutWFCheck p
+    | OpCode.dynamicSlice => parseWithoutWFCheck p
+    | OpCode.dynamicUpdateSlice => parseWithoutWFCheck p
+    | OpCode.exponential => parseWithoutWFCheck p
+    | OpCode.exponentialMinusOne => parseWithoutWFCheck p
+    | OpCode.fft => parseWithoutWFCheck p
+    | OpCode.floor => parseWithoutWFCheck p
+    | OpCode.gather => parseWithoutWFCheck p
+    | OpCode.getDimensionSize => parseWithoutWFCheck p
+    | OpCode.getTupleElement => parseWithoutWFCheck p
+    | OpCode.if => parseWithoutWFCheck p
+    | OpCode.imag => parseWithoutWFCheck p
+    | OpCode.infeed =>
+      report "Semantics implementation defined infeed"
+      parseWithoutWFCheck p
+    | OpCode.iota => parseWithoutWFCheck p
+    | OpCode.isFinite => parseWithoutWFCheck p
+    | OpCode.log => parseWithoutWFCheck p
+    | OpCode.logPlusOne => parseWithoutWFCheck p
+    | OpCode.logistic => parseWithoutWFCheck p
+    | OpCode.map => parseWithoutWFCheck p
+    | OpCode.maximum => parseWithoutWFCheck p
+    | OpCode.minimum => parseWithoutWFCheck p
+    | OpCode.multiply => parseWithoutWFCheck p
+    | OpCode.negate => parseWithoutWFCheck p
+    | OpCode.not => parseWithoutWFCheck p
+    | OpCode.optimizationBarrier => parseWithoutWFCheck p
+    | OpCode.or => parseWithoutWFCheck p
+    | OpCode.outfeed => parseWithoutWFCheck p
+    | OpCode.pad => parseWithoutWFCheck p
+    | OpCode.partitionId => parseWithoutWFCheck p
+    | OpCode.popcnt => parseWithoutWFCheck p
+    | OpCode.power => parseWithoutWFCheck p
+    | OpCode.real => parseWithoutWFCheck p
+    | OpCode.realDynamicSlice => parseWithoutWFCheck p -- Undocumented
+    | OpCode.recv => parseWithoutWFCheck p
+    | OpCode.reduce => parseWithoutWFCheck p
+    | OpCode.reducePrecision => parseWithoutWFCheck p
+    | OpCode.reduceScatter => parseWithoutWFCheck p
+    | OpCode.reduceWindow => parseWithoutWFCheck p
+    | OpCode.remainder => parseWithoutWFCheck p
+    | OpCode.replicaId => parseWithoutWFCheck p
+    | OpCode.reshape => parseWithoutWFCheck p
+    | OpCode.return => parseWithoutWFCheck p
+    | OpCode.reverse => parseWithoutWFCheck p
+    | OpCode.rng =>
+      report "explore for deprecation rng"
+      parseWithoutWFCheck p
+    | OpCode.rngBitGenerator => parseWithoutWFCheck p
+    | OpCode.roundNearestAfz => parseWithoutWFCheck p
+    | OpCode.roundNearestEven => parseWithoutWFCheck p
+    | OpCode.rsqrt => parseWithoutWFCheck p
+    | OpCode.scatter => parseWithoutWFCheck p
+    | OpCode.select => parseWithoutWFCheck p
+    | OpCode.selectAndScatter => parseWithoutWFCheck p
+    | OpCode.send => parseWithoutWFCheck p
+    | OpCode.shiftLeft => parseWithoutWFCheck p
+    | OpCode.shiftRightArithmetic => parseWithoutWFCheck p
+    | OpCode.shiftRightLogical => parseWithoutWFCheck p
+    | OpCode.sign => parseWithoutWFCheck p
+    | OpCode.sine => parseWithoutWFCheck p
+    | OpCode.slice => parseWithoutWFCheck p
+    | OpCode.sort => parseWithoutWFCheck p
+    | OpCode.sqrt => parseWithoutWFCheck p
+    | OpCode.subtract => parseWithoutWFCheck p
+    | OpCode.tan => parseWithoutWFCheck p
+    | OpCode.tanh => parseTanh p
+    | OpCode.transpose => parseWithoutWFCheck p
+    | OpCode.triangularSolve => parseWithoutWFCheck p
+    | OpCode.tuple => parseWithoutWFCheck p
+    | OpCode.uniformDequantize => parseWithoutWFCheck p
+    | OpCode.uniformQuantize => parseWithoutWFCheck p
+    | OpCode.while =>
+      report "semantics not fully decided "
+      parseWithoutWFCheck p
+    | OpCode.xor => parseWithoutWFCheck p
 
   partial def parseOperation : PState Operation := do
-    if ← isParse "\"func.return\"" then
-      let r ← parseReturn
-      return r
-    if ← isParse "\"stablehlo.return\"" then
-      let r ← parseReturn
-      return r
     let mut opOutputs := []
     if ← is "%" then
       opOutputs ← parseOpOutputs
       parseItem "="
-    if ← is "\"func.call\"" then
-      let r ← parseCall opOutputs
-      return r
+    parseItem "\""
+    let name ← parseId
+    parseItem "\""
+    let opInputValues ← parseValueUseList
+    let mut opInputAttrs := []
+    if ← is "<{" then
+      opInputAttrs ← parseOperationDictionaryAttributes
+    let mut opInputFuncs := []
+    if ← is "(" then
+      opInputFuncs ← parseOpInputFuncs
+    parseItem ":"
+    let functiontype ← parseFunctionType
+    let nameSplit := name.splitOn "."
+    if nameSplit.length ≠ 2 then throw <| (← error "invalid operation format")
+    let dialect := nameSplit.get! 0
+    let opName := nameSplit.get! 1
 
-    if ← is "\"check." then
-      let r ← parseOtherDialect opOutputs
-      return r
+    let preOperation : PreOperation := { dialect := dialect,
+                                         operation := opName,
+                                         inputValues := opInputValues,
+                                         inputFunctions := opInputFuncs,
+                                         inputAttributes := opInputAttrs,
+                                         outputs := opOutputs,
+                                         signature := functiontype}
 
-    if ← is "\"interpreter." then
-      let r ← parseOtherDialect opOutputs
-      return r
-
-    if ← is "\"chlo." then
-      let r ← parseOtherDialect opOutputs
-      return r
-
-    let operation ← parseStableHLO opOutputs
-
-    return operation
+    match dialect with
+    | "stablehlo" => toStableHLO preOperation
+    | _ => report s!"undocumented operation {dialect} {opName}" ; parseWithoutWFCheck preOperation
 
   partial def parseInputFuncBody : PState (List Operation) := do
     parseListAuxNoSep "}" parseOperation []

@@ -373,6 +373,7 @@ inductive OpCode where
 | remainder
 | replicaId
 | reshape
+| return
 | reverse
 | rng
 | rngBitGenerator
@@ -421,6 +422,7 @@ mutual
       (signature : FunctionType)
     | tanh (result operand : ValueId) (typ : FunctionType)
     | other
+      (diaclect : String)
       (name : String)
       (inputValues : List ValueId)
       (inputFunctions : List InputFunc)
