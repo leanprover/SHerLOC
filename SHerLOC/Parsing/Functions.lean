@@ -91,7 +91,6 @@ def parseFunctionDictionaryAttributes : PState (String × FunctionType × (List 
     throw <| ← error "A6"
 
 def parseFunction : PState Function := do
-  push "parseFunction"
   parseItems ["\"func.func\"", "(", ")"]
   parseItem "<{"
   let (name,typ,argAttrs,resAttrs) ← parseFunctionDictionaryAttributes
@@ -107,13 +106,9 @@ def parseFunction : PState Function := do
   parseItem "})"
   parseItems [":","(",")","->","(",")"]
   let r : Function := { funcId := name , funcArgAttrs := argAttrs , funcResAttrs := resAttrs , funcType := typ, funcBody := body }
-  pop "parseFunction"
   return r
 
 def parseFunctions : PState (List Function) := do
-  push "parseFunctions"
-  let r ← parseListAuxNoSep "}" parseFunction []
-  pop "parseFunctions"
-  return r
+  parseListAuxNoSep "}" parseFunction []
 
 end StableHLO.Parsing

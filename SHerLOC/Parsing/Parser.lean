@@ -263,43 +263,6 @@ def parseString : PState String := do
   parseItem "\""
   return token
 
-def flyOver (start stop : String) : PState Unit := do
-  skip
-  parseItem start
-  let st ← get
-  for _ in [st.index:st.stop] do
-    let st ← get
-    if ← isParse "->" then continue
-    if ← is stop then break
-    else set { st with index := st.index + 1, columnNumber := st.columnNumber + 1} -- Incorrect because of \n and \t but this code is temporary
-  parseItem stop
-
-def push (parser : String) : PState Unit := do
-  let st ← get
-  let traceItem : Trace := { startLine := st.lineNumber, startColumn := st.columnNumber, parser }
-  set { st with trace := traceItem :: st.trace   }
-
-def indent (n : Nat) : String := Id.run do
-  let mut token := ""
-  for _ in [:n] do
-    token := token.push ' '
-  return token
-
-def pop (parser : String) : PState Unit := do
-  let st ← get
-  if let some tail := st.trace.tail? then
-    let head := st.trace.head!
-    if head.parser = parser then
-      let derivation : Derivation := {
-        startLine := head.startLine,
-        startColumn := head.startColumn,
-        endLine := st.lineNumber,
-        endColumn := st.columnNumber,
-        parser := (indent tail.length) ++ parser }
-      set {st with trace := tail, derivations := derivation :: st.derivations }
-    else panic! s!"Trace mismatch: expected {parser} but found {head}"
-  else panic! "More pops than pushes, some parser is missing its push"
-
 partial def parseListOneorMoreAux (separator : String) (parse : PState T) (acc : List T) : PState (List T) := do
   if ← isParse separator then
     parseListOneorMoreAux separator parse ((← parse) :: acc)

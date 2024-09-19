@@ -7,7 +7,6 @@ import SHerLOC.AST1
 import SHerLOC.Parsing.Parser
 import SHerLOC.Parsing.Identifiers
 import SHerLOC.Parsing.Types
-import SHerLOC.Parsing.Constants
 
 namespace StableHLO.Parsing
 
@@ -27,17 +26,13 @@ def parseStableHLORecordFieldValue : PState (StableHLORecordFieldValue) := do
     return StableHLORecordFieldValue.type type
 
 def parseStableHLORecordField : PState (StableHLORecordField) := do
-  push "parseStableHLORecordField"
   let name ← parseId
   parseItem "="
   let value ← parseStableHLORecordFieldValue
-  pop "parseStableHLORecordField"
   return StableHLORecordField.mk name value
 
 def parseRecord : PState (List StableHLORecordField) := do
-  push "parseRecord"
   let r ← parseList "<" ">" "," parseStableHLORecordField
-  pop "parseRecord"
   return r
 
 mutual
@@ -85,41 +80,30 @@ mutual
     throw <| (← error "literal")
 
   partial def parseConstant : PState Constant := do
-    push "parseConstant"
     let literal ← parseLiteral
     let mut typ : Option SType := none
     if ← isParse ":" then
       typ ← parseType
     let r : Constant := Constant.mk literal typ
-    pop "parseConstant"
     return r
 
   partial def parseAttribute : PState Attribute := do
-    push "parseAttribute"
     if ← isParse "use_global_device_ids" then
       report "literal use_global_device_ids"
-      pop "parseAttribute"
       return Attribute.mk "use_global_device_ids" <| Constant.mk (Literal.element (ElementLiteral.booleanLiteral BooleanLiteral.true)) none
     else
       let id ← parseId
       parseItem "="
       let constant ← parseConstant
-      pop "parseAttribute"
       return Attribute.mk id constant
 
 partial def parseAttributes : PState (List Attribute) := do
-  push "parseAttributes"
-  let r ← parseList "{" "}" "," parseAttribute
-  pop "parseAttributes"
-  return r
+  parseList "{" "}" "," parseAttribute
 
 end
 
 def parseValueUseList : PState (List ValueId) := do
-  push "parseValueUseList"
-  let r ← parseList "(" ")" "," parseValueIdOpArg
-  pop "parseValueUseList"
-  return r
+  parseList "(" ")" "," parseValueIdOpArg
 
 def tryParseDictionaryEntry (name : String) (parser : PState T) : PState (Option T) := do
   if ← is name then
@@ -130,9 +114,6 @@ def tryParseDictionaryEntry (name : String) (parser : PState T) : PState (Option
   else return none
 
 def parseDictionaryProperties : PState (List Attribute) := do
-  push "parseDictionaryProperties"
-  let r ← parseList "<{" "}>" "," parseAttribute
-  pop "parseDictionaryProperties"
-  return r
+  parseList "<{" "}>" "," parseAttribute
 
 end StableHLO.Parsing
