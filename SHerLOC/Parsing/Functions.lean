@@ -109,7 +109,6 @@ def parseFunction : PState Function := do
   return r
 
 def parseFunctions : PState (List Function) := do
-  let r ← parseListAuxNoSep "}" parseFunction []
-  return r
+  parseListAuxNoSep "}" parseFunction []
 
 end StableHLO.Parsing

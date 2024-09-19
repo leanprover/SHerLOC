@@ -193,8 +193,8 @@ def parseValueTypesOutput : PState (List ValueType) := do
   return valueTypes
 
 def parseValueTypes : PState (List ValueType) := do
-  let r ← parseList "(" ")" "," parseValueType
-  return r
+  parseList "(" ")" "," parseValueType
+
 
 def parseFunctionType : PState FunctionType := do
   let inputTypes ← parseValueTypes

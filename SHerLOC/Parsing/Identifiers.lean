@@ -10,8 +10,7 @@ namespace StableHLO.Parsing
 
 def parseValueId : PState String := do
   parseItem "%"
-  let r ← parseId
-  return r
+  parseId
 
 def parseValueIdRes : PState String := do
   let r ← parseValueId
@@ -33,16 +32,13 @@ def parseValueIdOpArg : PState String := do
 
 def parseFuncId : PState String := do
   parseItem "@"
-  let r ← parseFId
-  return r
+  parseFId
 
 def parseUnusedId : PState String := do
   parseItem "^"
-  let r ← parseId
-  return r
+  parseId
 
 def parseAttrId : PState String := do
-  let r ← parseId
-  return r
+  parseId
 
 end StableHLO.Parsing

@@ -78,8 +78,7 @@ def parseElementLiteral : PState ElementLiteral := do
   throw <| ← error "Element literal"
 
 def parseDenseElements (closingMark : String) : PState (List ElementLiteral) := do
-  let r ← parseListAux closingMark "," parseElementLiteral
-  return r
+  parseListAux closingMark "," parseElementLiteral
 
 partial def parseDenseLiteral : PState DenseLiteral := do
   if ← is "[" then
@@ -103,8 +102,7 @@ def parseTensorLiteral : PState TensorLiteral := do
     return denseLiteral
 
 def parseStringLiteral : PState String := do
-  let r ← parseString
-  return r
+  parseString
 
 def parseComparisonDirection : PState ComparisonDirection := do
   let mut r := none
@@ -226,8 +224,7 @@ def parseConvolutionMode : PState ConvolutionMode := do
   else throw <| ← error "convolution mode"
 
 def parseConvolutionModes : PState (List ConvolutionMode) := do
-  let r ← parseList "[" "]" "," parseConvolutionMode
-  return r
+  parseList "[" "]" "," parseConvolutionMode
 
 def parseConvolution : PState Convolution := do
   parseItem "<"

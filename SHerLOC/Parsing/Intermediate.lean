@@ -98,14 +98,12 @@ mutual
       return Attribute.mk id constant
 
 partial def parseAttributes : PState (List Attribute) := do
-  let r ← parseList "{" "}" "," parseAttribute
-  return r
+  parseList "{" "}" "," parseAttribute
 
 end
 
 def parseValueUseList : PState (List ValueId) := do
-  let r ← parseList "(" ")" "," parseValueIdOpArg
-  return r
+  parseList "(" ")" "," parseValueIdOpArg
 
 def tryParseDictionaryEntry (name : String) (parser : PState T) : PState (Option T) := do
   if ← is name then
@@ -116,7 +114,6 @@ def tryParseDictionaryEntry (name : String) (parser : PState T) : PState (Option
   else return none
 
 def parseDictionaryProperties : PState (List Attribute) := do
-  let r ← parseList "<{" "}>" "," parseAttribute
-  return r
+  parseList "<{" "}>" "," parseAttribute
 
 end StableHLO.Parsing
