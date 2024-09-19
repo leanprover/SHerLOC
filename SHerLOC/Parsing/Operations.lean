@@ -217,6 +217,7 @@ mutual
   partial def parseOtherDialect (opOutputs : List ValueId) : PState Operation := do
     push "parseOtherDialect"
     let name ← parseString
+    report s!"undocumented operation: {name}"
     let opInputValues ← parseValueUseList
     let mut opInputAttrs := []
     if ← is "<{" then
@@ -282,7 +283,9 @@ partial def parseStableHLO (opOutputs : List ValueId) : PState Operation := do
   | OpCode.getTupleElement => parseOperationBasic OpCode.getTupleElement opOutputs
   | OpCode.if => parseOperationBasic OpCode.if opOutputs
   | OpCode.imag => parseOperationBasic OpCode.imag opOutputs
-  | OpCode.infeed => parseOperationBasic OpCode.infeed opOutputs
+  | OpCode.infeed =>
+    report "Semantics implementation defined infeed"
+    parseOperationBasic OpCode.infeed opOutputs
   | OpCode.iota => parseOperationBasic OpCode.iota opOutputs
   | OpCode.isFinite => parseOperationBasic OpCode.isFinite opOutputs
   | OpCode.log => parseOperationBasic OpCode.log opOutputs
@@ -312,7 +315,9 @@ partial def parseStableHLO (opOutputs : List ValueId) : PState Operation := do
   | OpCode.replicaId => parseOperationBasic OpCode.replicaId opOutputs
   | OpCode.reshape => parseOperationBasic OpCode.reshape opOutputs
   | OpCode.reverse => parseOperationBasic OpCode.reverse opOutputs
-  | OpCode.rng => parseOperationBasic OpCode.rng opOutputs
+  | OpCode.rng =>
+    report "explore for deprecation rng"
+    parseOperationBasic OpCode.rng opOutputs
   | OpCode.rngBitGenerator => parseOperationBasic OpCode.rngBitGenerator opOutputs
   | OpCode.roundNearestAfz => parseOperationBasic OpCode.roundNearestAfz opOutputs
   | OpCode.roundNearestEven => parseOperationBasic OpCode.roundNearestEven opOutputs
@@ -331,13 +336,24 @@ partial def parseStableHLO (opOutputs : List ValueId) : PState Operation := do
   | OpCode.sqrt => parseOperationBasic OpCode.sqrt opOutputs
   | OpCode.subtract => parseOperationBasic OpCode.subtract opOutputs
   | OpCode.tan => parseOperationBasic OpCode.tan opOutputs
-  | OpCode.tanh => parseOperationBasic OpCode.tanh opOutputs
+  | OpCode.tanh => {
+    let opInputValues ← parseValueUseList
+    -- could provide better error messages by ensuring not dictionnary
+    if opInputValues.length ≠ 1 then throw <| (← error "tanh operation: wrong number of arguments")
+    else {
+      parseItem ":"
+      let functionType ← parseFunctionType
+      return Operation.tanh (opInputValues.get! 0) functionType
+    }
+  }
   | OpCode.transpose => parseOperationBasic OpCode.transpose opOutputs
   | OpCode.triangularSolve => parseOperationBasic OpCode.triangularSolve opOutputs
   | OpCode.tuple => parseOperationBasic OpCode.tuple opOutputs
   | OpCode.uniformDequantize => parseOperationBasic OpCode.uniformDequantize opOutputs
   | OpCode.uniformQuantize => parseOperationBasic OpCode.uniformQuantize opOutputs
-  | OpCode.while => parseOperationBasic OpCode.while opOutputs
+  | OpCode.while =>
+    report "semantics not fully decided "
+    parseOperationBasic OpCode.while opOutputs
   | OpCode.xor => parseOperationBasic OpCode.xor opOutputs
 
   partial def parseOperation : PState Operation := do
