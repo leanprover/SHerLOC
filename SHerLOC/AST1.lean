@@ -413,28 +413,13 @@ mutual
     deriving Repr, Inhabited, Nonempty
 
   inductive Operation where
-    | stablehlo
-      (opCode : OpCode)
-      (inputValues : List ValueId)
-      (inputFunctions : List InputFunc)
-      (inputAttributes : List Attribute)
-      (outputs : List ValueId)
-      (signature : FunctionType)
     | tanh (result operand : ValueId) (typ : FunctionType)
     | other
-      (diaclect : String)
+      (dialect : String)
       (name : String)
       (inputValues : List ValueId)
       (inputFunctions : List InputFunc)
       (inputAttributes : List Attribute)
-      (outputs : List ValueId)
-      (signature : FunctionType)
-    | return
-      (operands : List ValueId)
-      (signature : FunctionType)
-    | call
-      (callee : FuncId)
-      (inputValues : List ValueId)
       (outputs : List ValueId)
       (signature : FunctionType)
     deriving Repr, Inhabited, Nonempty
