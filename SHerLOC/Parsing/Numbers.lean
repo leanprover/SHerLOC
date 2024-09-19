@@ -15,7 +15,6 @@ def parseBooleanLiteral : PState BooleanLiteral := do
   throw <| ← error "Boolean literal"
 
 def parseIntegerLiteral : PState IntegerLiteral := do
-  push "parseIntegerLiteral"
   let mut sign := Sign.plus
   if ← isParse "+" then sign := Sign.plus
   else if ← isParse "-" then sign := Sign.minus
@@ -26,19 +25,16 @@ def parseIntegerLiteral : PState IntegerLiteral := do
     nat ← parseDecimal
   if let some v := nat then
     let parseResult := { sign := sign , decimal := v }
-    pop "parseIntegerLiteral"
     return parseResult
   else
     throw <| ← error "Integer literal"
 
 def parseFloatLiteral : PState FloatLiteral := do
-  push "parseFloatLiteral"
   let mut sign := Sign.plus
   if ← isParse "+" then sign := Sign.plus
   else if ← isParse "-" then sign := Sign.minus
   if ← is "0x" then
     let nat ← parseHexaDecimal
-    pop "parseFloatLiteral"
     return FloatLiteral.hexaDecimal nat
   else
     let nat ← parseDecimal
@@ -58,18 +54,15 @@ def parseFloatLiteral : PState FloatLiteral := do
         fractionalPart := fractionalPart,
         scientificPart := scientificPart
       }
-    pop "parseFloatLiteral"
     return parseResult
 
 def parseComplexLiteral : PState ComplexLiteral := do
-  push "parseComplexLiteral"
   parseItem "("
   let realPart ← parseFloatLiteral
   parseItem ","
   let imaginaryPart ← parseFloatLiteral
   parseItem ")"
   let parseResult := { real := realPart, imaginary := imaginaryPart }
-  pop "parseComplexLiteral"
   return parseResult
 
 def parseElementLiteral : PState ElementLiteral := do
@@ -85,46 +78,35 @@ def parseElementLiteral : PState ElementLiteral := do
   throw <| ← error "Element literal"
 
 def parseDenseElements (closingMark : String) : PState (List ElementLiteral) := do
-  push "parseDenseElements"
   let r ← parseListAux closingMark "," parseElementLiteral
-  pop "parseDenseElements"
   return r
 
 partial def parseDenseLiteral : PState DenseLiteral := do
-  push "parseDenseLiteral"
   if ← is "[" then
     let denseDimension ← parseList "[" "]" "," parseDenseLiteral
-    pop "parseDenseLiteral"
     return DenseLiteral.denseDimension denseDimension
   else
     let denseElements ← parseDenseElements "]"
-    pop "parseDenseLiteral"
     return DenseLiteral.denseElements denseElements
 
 def parseTensorLiteral : PState TensorLiteral := do
-  push "parseTensorLiteral"
   parseItem "dense"
   parseItem "<"
   if ← is "[" then
     let denseLiteral ← parseDenseLiteral
     parseItem ">"
-    pop "parseTensorLiteral"
     return denseLiteral
   else
     let denseElements ← parseDenseElements ">"
     let denseLiteral := DenseLiteral.denseElements denseElements
     parseItem ">"
-    pop "parseTensorLiteral"
     return denseLiteral
 
 def parseStringLiteral : PState String := do
-  push "parseStringLiteral"
   let r ← parseString
-  pop "parseStringLiteral"
   return r
 
 def parseComparisonDirection : PState ComparisonDirection := do
-  push "parseComparisonDirection"
   let mut r := none
   if ← isParse "EQ" then r := ComparisonDirection.eq
   if ← isParse "NE" then r := ComparisonDirection.ne
@@ -133,89 +115,73 @@ def parseComparisonDirection : PState ComparisonDirection := do
   if ← isParse "LE" then r := ComparisonDirection.le
   if ← isParse "LT" then r := ComparisonDirection.lt
   if let some res := r then
-    pop "parseComparisonDirection"
     return res
   else throw <| ← error "comparison direction"
 
 def parseCompareType : PState CompareType := do
-  push "parseCompareType"
   let mut r := none
   if ← isParse "FLOAT" then r := CompareType.float
   if ← isParse "TOTALORDER" then r := CompareType.totalOrder
   if ← isParse "SIGNED" then r := CompareType.signed
   if ← isParse "UNSIGNED" then r := CompareType.unsigned
   if let some res := r then
-    pop "parseCompareType"
     return res
   else throw <| ← error "compaare type"
 
 def parsePrecisionConfig : PState PrecisionConfig := do
-  push "parsePrecisionConfig"
   let mut r := none
   if ← isParse "DEFAULT" then r := PrecisionConfig.default
   if ← isParse "HIGHEST" then r := PrecisionConfig.highest
   if ← isParse "HIGH" then r := PrecisionConfig.high
   if let some res := r then
-    pop "parsePrecisionConfig"
     return res
   else throw <| ← error "precision config"
 
 def parseFftType : PState FftType := do
-  push "parseFftType"
   let mut r := none
   if ← isParse "FFT" then r := FftType.fft
   if ← isParse "IFFT" then r := FftType.ifft
   if ← isParse "RFFT" then r := FftType.rfft
   if ← isParse "IRFFT" then r := FftType.irfft
   if let some res := r then
-    pop "parseFftType"
     return res
   else throw <| ← error "FFT type"
 
 def parseChannelType : PState ChannelType := do
-  push "parseChannelType"
   let mut r := none
   if ← isParse "DEVICE_TO_DEVICE" then r := ChannelType.deviceToDevice
   if ← isParse "HOST_TO_DEVICE" then r := ChannelType.hostToDevice
   if let some res := r then
-    pop "parseChannelType"
     return res
   else throw <| ← error "channel type"
 
 def parseRngDistribution : PState RngDistribution := do
-  push "parseRngDistribution"
   let mut r := none
   if ← isParse "UNIFORM" then r := RngDistribution.uniform
   if ← isParse "NORMAL" then r := RngDistribution.normal
   if let some res := r then
-    pop "parseRngDistribution"
     return res
   else throw <| ← error "rng distribution"
 
 def parseRngAlgorithm : PState RngAlgorithm := do
-  push "parseRngAlgorithm"
   let mut r := none
   if ← isParse "DEFAULT" then r := RngAlgorithm.default
   if ← isParse "THREE_FRY" then r := RngAlgorithm.threeFry
   if ← isParse "PHILOX" then r := RngAlgorithm.philox
   if let some res := r then
-    pop "parseRngAlgorithm"
     return res
   else throw <| ← error "rng algorithm"
 
 def parseTransposeA : PState TransposeA := do
-  push "parseTransposeA"
   let mut r := none
   if ← isParse "NO_TRANSPOSE" then r := TransposeA.noTranspose
   if ← isParse "TRANSPOSE" then r := TransposeA.transpose
   if ← isParse "ADJOINT" then r := TransposeA.adjoint
   if let some res := r then
-    pop "parseTransposeA"
     return res
   else throw <| ← error "tranpose annotation"
 
 def parseEnumLiteral : PState EnumLiteral := do
-  push "parseEnumLiteral"
   parseItem "<"
   let mut r := none
   if ← isParse "comparison_direction" then r := EnumLiteral.comparisonDirection <| ← parseComparisonDirection
@@ -228,7 +194,6 @@ def parseEnumLiteral : PState EnumLiteral := do
   if ← isParse "transpose" then r := EnumLiteral.transposeA <| ← parseTransposeA
   if let some res := r then
     parseItem ">"
-    pop "parseEnumLiteral"
     return res
   else throw <| ← error "enumeration"
 
@@ -249,7 +214,6 @@ def parseArrayLiteral : PState ArrayLiteral := do
   throw <| ← error "array literal"
 
 def parseConvolutionMode : PState ConvolutionMode := do
-  push "parseConvolutionMode"
   let mut r := none
   if (← isParse "o") then r := ConvolutionMode.o
   else if (← isParse "f") then r := ConvolutionMode.f
@@ -258,18 +222,14 @@ def parseConvolutionMode : PState ConvolutionMode := do
   else if (← isParse "1") then r := ConvolutionMode.one
   else if (← isParse "b") then r := ConvolutionMode.b
   else if (← isParse "2") then r := ConvolutionMode.two
-  pop "parseConvolutionMode"
   if let some res := r then return res
   else throw <| ← error "convolution mode"
 
 def parseConvolutionModes : PState (List ConvolutionMode) := do
-  push "parseConvolutionModes"
   let r ← parseList "[" "]" "," parseConvolutionMode
-  pop "parseConvolutionModes"
   return r
 
 def parseConvolution : PState Convolution := do
-  push "parseConvolution"
   parseItem "<"
   let lhs ← parseConvolutionModes
   parseItem "x"
@@ -277,7 +237,6 @@ def parseConvolution : PState Convolution := do
   parseItem "->"
   let result ← parseConvolutionModes
   parseItem ">"
-  pop "parseConvolution"
   return { lhs, rhs, result }
 
 end StableHLO.Parsing

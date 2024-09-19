@@ -12,7 +12,6 @@ import SHerLOC.Parsing.Intermediate
 namespace StableHLO.Parsing
 
 def parseModule : PState Module := do
-  push "parseModule"
   parseItems ["\"builtin.module\"", "(", ")"]
   let mut name : Option FuncId := none
   if ← is "<{" then
@@ -27,7 +26,6 @@ def parseModule : PState Module := do
       let r : Module := { modId := name, modAttrs := [], modFuncs := [] }
       parseItems ["}",")"]
       parseItems [":","(",")","->","(",")"]
-      pop "parseModule"
       return r
     let region ← parseFunctions
     parseItems ["}",")"]
@@ -36,23 +34,18 @@ def parseModule : PState Module := do
       attributes ← parseAttributes
     parseItems [":","(",")","->","(",")"]
     let r : Module := { modId := name, modAttrs := attributes, modFuncs := region }
-    pop "parseModule"
     return r
   else
     let r : Module := { modId := name, modAttrs := [], modFuncs := [] }
-    pop "parseModule"
     return r
 
 partial def parseModules : PState (List Module) := do
-  push "parseModules"
   let done ← done?
   if done then
-    pop "parseModules"
     return []
   else
     let mod ← parseModule
     let mods ← parseModules
-    pop "parseModules"
     return mod :: mods
 
 
