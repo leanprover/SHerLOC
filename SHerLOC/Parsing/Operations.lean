@@ -24,26 +24,6 @@ def parseInputFuncInputs : PState (List FuncInput) := do
   let r ← parseList "(" ")" "," parseInputFuncInput
   return r
 
--- def parseReturn : PState Operation := do
---   let arguments ← parseValueUseList
---   parseItem ":"
---   let functiontype ← parseFunctionType
---   let parseResult := Operation.return arguments functiontype
---   return parseResult
-
--- def parseCall (outputs : List ValueId) : PState Operation := do
---   parseItem "\"func.call\""
---   let arguments ← parseValueUseList
---   parseItem "<{"
---   parseItem "callee"
---   parseItem "="
---   let callee ← parseFuncId
---   parseItem "}>"
---   parseItem ":"
---   let typ ← parseFunctionType
---   let r := Operation.call callee arguments outputs typ
---   return r
-
 def toOpCode (opCodeString : String) : PState OpCode := do
   let mut opCode : Option OpCode := none
   match opCodeString with
@@ -169,11 +149,39 @@ structure PreOperation where
   signature : FunctionType
   deriving Repr, Inhabited, Nonempty
 
+def checkNoAttributes (p : PreOperation) : PState Unit := do
+  if p.inputAttributes.length != 0 then throw <| (← error s!"Did not expect attribute for {p.operation}")
+
+def checkNoInputFuncs (p : PreOperation) : PState Unit := do
+  if p.inputFunctions.length != 0 then throw <| (← error s!"Did not expect functions for {p.operation}")
+
+def checkInputUnary (p : PreOperation) : PState ValueId := do
+  if p.inputValues.length = 1 then return p.inputValues.get! 0
+  else throw <| (← error "tanh operation: wrong number of arguments")
+
+def checkOutputUnary (p : PreOperation) : PState ValueId := do
+  if p.outputs.length = 1 then return p.outputs.get! 0
+  else throw <| (← error "tanh operation: wrong number of arguments")
+
+def checkTypeArgUnary (t : FunctionType) : PState TensorType := do
+  match t.domain with
+  | [ValueType.tensorType t] => return t
+  | _ => throw <| (← error "tanh operation: wrong number of arguments")
+
+def checkTypeOutputUnary (t : FunctionType) : PState TensorType := do
+  match t.range with
+  | [ValueType.tensorType t] => return t
+  | _ => throw <| (← error "tanh operation: wrong number of arguments")
+
+def checkTensorShapes (t₁ t₂ : TensorType) : PState Unit := do
+  if t₁.shape ≠ t₂.shape then throw <| (← error "tanh operation: wrong number of arguments")
+
 def parseTanh (p : PreOperation) : PState Operation := do
-    -- could provide better error messages by ensuring not dictionnary
-    if p.outputs.length ≠ 1 then throw <| (← error "tanh operation: wrong number of arguments")
-    if p.inputValues.length ≠ 1 then throw <| (← error "tanh operation: wrong number of arguments")
-    return Operation.tanh (p.outputs.get! 0) (p.inputValues.get! 0) p.signature
+    checkNoAttributes p
+    checkNoInputFuncs p
+    let operand ← checkInputUnary p
+    let result ← checkOutputUnary p
+    return Operation.tanh result operand p.signature
 
 mutual
 

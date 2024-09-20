@@ -13,7 +13,7 @@ then
     exit
 fi
 
-shopt="stablehlo/build/bin/stablehlo-opt -mlir-print-op-generic -split-input-file"
+shopt="stablehlo/build/bin/stablehlo-opt -mlir-print-op-generic -split-input-file -chlo-legalize-to-stablehlo -shape-legalize-to-stablehlo"
 
 interpret_test=stablehlo/stablehlo/tests/interpret
 

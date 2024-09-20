@@ -223,7 +223,7 @@ inductive TensorElementTypeGen where
 inductive DimensionSize where
   | known (size : Nat)
   | unknown
-  deriving Repr, Inhabited, Nonempty
+  deriving Repr, Inhabited, Nonempty, DecidableEq
 
 structure TensorType where
   shape : List DimensionSize
