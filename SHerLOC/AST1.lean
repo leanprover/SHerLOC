@@ -326,6 +326,7 @@ inductive OpCode where
 | countLeadingZeros
 | customCall
 | divide
+| dot
 | dotGeneral
 | dynamicBroadcastInDim
 | dynamicConv
