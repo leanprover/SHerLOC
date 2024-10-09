@@ -46,7 +46,7 @@ structure ParsingState where
 
 abbrev PState (T : Type) := StateT ParsingState (Except (String × List Trace × List Derivation)) T
 
-def error (msg : String) : PState (String × (List Trace) × (List Derivation) ):= do
+def error (msg : String) : PState (String × (List Trace) × (List Derivation)) := do
   let st ← get
   let mut token := ""
   let mut started := false
@@ -60,6 +60,11 @@ def error (msg : String) : PState (String × (List Trace) × (List Derivation) )
     else if c = ' ' || c = '\t' || c = '\n' then break
     else token := token.push c
   let errorMsg := s!"Parsing error line {st.lineNumber}, column {st.columnNumber} : expected {msg} but found {token}"
+  return (errorMsg, st.trace, st.derivations)
+
+def errorSimple (msg : String) : PState (String × (List Trace) × (List Derivation)) := do
+  let st ← get
+  let errorMsg := s!"Parsing error line {st.lineNumber}, column {st.columnNumber} : {msg}"
   return (errorMsg, st.trace, st.derivations)
 
 def report (msg : String) : PState Unit := do

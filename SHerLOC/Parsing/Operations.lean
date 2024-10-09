@@ -159,7 +159,7 @@ def parseOpCode : PState OpCode := do
   if let some op := opCode then
     parseItem "\""
     return op
-  else throw <| (← error "op code")
+  else throw (← errorSimple (String.join ["Unknown op code: '", opCodeString, "'"]))
 
 mutual
 
@@ -167,7 +167,7 @@ mutual
     parseItem "{"
     let mut funcInputs : List FuncInput := []
     if ← is "^" then
-      discard <| parseUnusedId
+      discard parseUnusedId
       funcInputs ← parseInputFuncInputs
       parseItem ":"
     let body ← parseInputFuncBody
