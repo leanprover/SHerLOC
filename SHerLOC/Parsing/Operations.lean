@@ -80,6 +80,7 @@ def parseOpCode : PState OpCode := do
   | "count_leading_zeros" => opCode := some OpCode.countLeadingZeros
   | "custom_call" => opCode := some OpCode.customCall
   | "divide" => opCode := some OpCode.divide
+  | "dot" => opCode := some OpCode.dot
   | "dot_general" => opCode := some OpCode.dotGeneral
   | "dynamic_broadcast_in_dim" => opCode := some OpCode.dynamicBroadcastInDim
   | "dynamic_conv" => opCode := some OpCode.dynamicConv
@@ -244,6 +245,7 @@ partial def parseStableHLO (opOutputs : List ValueId) : PState Operation := do
   | OpCode.countLeadingZeros => parseOperationBasic OpCode.countLeadingZeros opOutputs
   | OpCode.customCall => parseOperationBasic OpCode.customCall opOutputs
   | OpCode.divide => parseOperationBasic OpCode.divide opOutputs
+  | OpCode.dot => parseOperationBasic OpCode.dot opOutputs
   | OpCode.dotGeneral => parseOperationBasic OpCode.dotGeneral opOutputs
   | OpCode.dynamicBroadcastInDim => parseOperationBasic OpCode.dynamicBroadcastInDim opOutputs
   | OpCode.dynamicConv => parseOperationBasic OpCode.dynamicConv opOutputs
