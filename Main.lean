@@ -54,8 +54,8 @@ def graph (P : Parsed) : IO UInt32 := do
   let content := StableHLO.Parsing.parse content
   match content with
   | .ok (p, _) =>
-    let graph := StableHLO.Analysis.graph p
-    IO.println graph
+    let graphs := StableHLO.Analysis.modulesToGraph p
+    graphs.forM IO.println
     return 0
   | .error e =>
     IO.println "Error parsing file:"
