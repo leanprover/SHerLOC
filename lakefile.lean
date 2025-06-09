@@ -11,6 +11,9 @@ lean_lib «SHerLOC» where
 lean_exe "sherloc" where
   root := `Main
 
+require Cli from git
+  "https://github.com/leanprover/lean4-cli.git" @ "v4.19.0"
+
 @[test_driver]
 lean_exe "test" where
   root := `Test
