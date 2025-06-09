@@ -9,13 +9,6 @@ import Cli
 open System IO FilePath FS Std
 open Cli
 
-def helpMessage : String :=
-  "Usage: sherloc [command] [options]\n" ++
-  "Commands:\n" ++
-  "  help, --help, -h: Show this help message\n" ++
-  "  parse <file>: Parse the given file and output the AST to .ast and .report files [default]\n" ++
-  "  ops <file>: List operations used in the given hlo program"
-
 def parse (P : Parsed) : IO UInt32 := do
   let file := P.positionalArg! "hloFileName" |>.as! String
   let fp : FilePath := System.mkFilePath [file]
@@ -33,6 +26,7 @@ def parse (P : Parsed) : IO UInt32 := do
     IO.println s!"{e.2.1}"
     IO.println s!"{e.1}"
     return 1
+
 def ops (P : Parsed) : IO UInt32 := do
   let file := P.positionalArg! "hloFileName" |>.as! String
   let fp : FilePath := System.mkFilePath [file]
@@ -47,6 +41,7 @@ def ops (P : Parsed) : IO UInt32 := do
     IO.println "Error parsing file:"
     IO.println s!"{e}"
     return 1
+
 def graph (P : Parsed) : IO UInt32 := do
   let file := P.positionalArg! "hloFileName" |>.as! String
   let fp : FilePath := System.mkFilePath [file]
@@ -77,6 +72,7 @@ def opsCmd := `[Cli|
   ARGS:
     hloFileName : String;      "The StableHLO file to parse (e.g., 'example.mlir')"
 ]
+
 def graphCmd := `[Cli|
   "graph" VIA graph;
   "Generate a graph representation of the StableHLO program in graphviz format."
