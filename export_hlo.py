@@ -7,10 +7,17 @@ Tested with Python 3.12.10
 import argparse
 import jax
 from jax import export
-from jax._src.interpreters import mlir as jax_mlir
-from jax._src.lib.mlir import ir
 import jax.numpy as jnp
 from flax import nnx
+
+"""
+These are technically private implementation details and could change at any time, but
+this is the recommended way to get pretty-printed StableHLO output from JAX.
+
+See: https://openxla.org/stablehlo/tutorials/jax-export#define_get_stablehlo_asm_to_help_with_mlir_printing
+"""
+from jax._src.interpreters import mlir as jax_mlir
+from jax._src.lib.mlir import ir
 
 
 # Returns prettyprint of StableHLO module as generic print
@@ -73,7 +80,7 @@ def main():
         sample_inputs = [jnp.asarray([[    1, 16644, 31844,   629,  3924,   322, 14138]])]
         do_export(model, sample_inputs)
     else:
-        raise Exception("Unrecognized model")
+        raise Exception("Unrecognized model: {}".format(model))
     
 if __name__ == "__main__":
     main()
