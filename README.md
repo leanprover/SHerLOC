@@ -2,7 +2,7 @@
 
 SHerLOC is a program analyzer for [StableHLO programs](https://openxla.org/stablehlo). It is written in [Lean](https://leanprover-community.github.io/index.html). 
 
-SHerLOC aims to transform a StableHLO program written in concrete generic syntax into a well-formed, typed, abstract syntax tree. It also reports information such as use of undocumented/unspecified/underspecified/deprecated constructions.
+SHerLOC aims to transform a StableHLO program written in concrete generic syntax into a well-formed, typed, abstract syntax tree. It also reports information such as use of undocumented/unspecified/underspecified/deprecated constructions and provides tools for analyzing and visualizing HLO programs.
 
 ## Installation
 
@@ -26,32 +26,23 @@ If the StableHLO program is in pretty syntax, you can convert it to generic synt
 stablehlo-opt -mlir-print-op-generic myprogrampretty.mlir > myprogramgeneric.mlir
 ```
 
-To produce a StableHLO program in generic syntax from Jax, you can use the following Python example:
+Other subcommands are also available:
 
-```python
-from jax._src.interpreters import mlir as jax_mlir
-from jax._src.lib.mlir import ir
-
-# Returns prettyprint of StableHLO module as generic print
-def get_stablehlo_asm(module_str):
-  with jax_mlir.make_ir_context():
-    stablehlo_module = ir.Module.parse(module_str, context=jax_mlir.make_ir_context())
-    return stablehlo_module.operation.get_asm(print_generic_op_form=True, enable_debug_info=False)
-
-## ----- 
-
-import jax
-from jax import export
-import jax.numpy as jnp
-import numpy as np
-
-def plus(x,y):
-  return jnp.add(x,y)
-
-# Create abstract input shapes:
-inputs = (np.int32(1), np.int32(1),)
-input_shapes = [jax.ShapeDtypeStruct(input.shape, input.dtype) for input in inputs]
-stablehlo_add = export.export(jax.jit(plus))(*input_shapes).mlir_module()
-
-print(get_stablehlo_asm(stablehlo_add))
+`ops` - prints the operators used in the program:
+```bash
+lake exe sherloc ops myprogram.mlir
 ```
+
+`graph` - prints the program in graphviz format for visualization
+```bash
+lake exe sherloc graph myprogram.mlir
+```
+
+## Exporting Models to StableHLO
+
+For examples of how to produce a StableHLO program from a JAX model, see `export_hlo.py`. Example usage:
+
+```bash
+python export_hlo.py attention > attention.mlir
+```
+
