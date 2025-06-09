@@ -69,6 +69,10 @@ def main():
         do_export(model, sample_inputs)
 
     elif model == "resnet":
+        """
+        These models are pulled from HuggingFace, and therefore may change over time
+        making the exported StableHLO non-reproducible.
+        """
         from transformers import FlaxResNetModel
         model = FlaxResNetModel.from_pretrained("microsoft/resnet-18", return_dict=False)
         sample_inputs = [jax.random.uniform(jax.random.key(0), (1, 3, 224, 224))]
