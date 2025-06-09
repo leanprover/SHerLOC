@@ -25,7 +25,7 @@ def main (_ : List String) : IO UInt32 := do
       for msg in p.2.report do
         writeFile fpReport s!"File {file}, {msg}\n"
       IO.println "success"
-    | .error e =>
+    | .error _ =>
       failed := file :: failed
       IO.println "failure"
   IO.println "\nFailed tests:\n"
