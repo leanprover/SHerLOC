@@ -5,3 +5,4 @@ Authors: Jean-Baptiste Tristan
 -/
 import SHerLOC.AST1
 import SHerLOC.Parsing.Basic
+import SHerLOC.Analysis.Basic

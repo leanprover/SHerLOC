@@ -10,3 +10,7 @@ lean_lib «SHerLOC» where
 @[default_target]
 lean_exe "sherloc" where
   root := `Main
+
+@[test_driver]
+lean_exe "test" where
+  root := `Test
