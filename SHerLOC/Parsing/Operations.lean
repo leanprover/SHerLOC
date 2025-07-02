@@ -324,7 +324,7 @@ partial def parseStableHLO (opOutputs : List ValueId) : PState Operation := do
     else {
       parseItem ":"
       let functionType ← parseFunctionType
-      return Operation.tanh (opInputValues.get! 0) functionType
+      return Operation.tanh (opInputValues[0]!) functionType
     }
   }
   | OpCode.transpose => parseOperationBasic OpCode.transpose opOutputs
