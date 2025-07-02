@@ -159,7 +159,7 @@ def isChar (c : Char) : PState Bool := do
 
 def parseItems (keywords : List String) : PState Unit := do
   for i in [:keywords.length] do
-    parseItem <| keywords.get! i
+    parseItem <| keywords[i]!
 
 def parseFId : PState String := do
   skip

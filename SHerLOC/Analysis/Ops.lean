@@ -3,7 +3,7 @@ import SHerLOC.AST1
 namespace StableHLO.Analysis
 
 def uniqueOps (p : List Parsing.Module) : List String :=
-  let ops := p.bind (fun {modFuncs, .. } => modFuncs.bind (fun {funcBody := .mk _ body, .. } => body.map (fun i =>
+  let ops := p.flatMap (fun {modFuncs, .. } => modFuncs.flatMap (fun {funcBody := .mk _ body, .. } => body.map (fun i =>
   match i with
   | .stablehlo o _ _ _ _ _ => s!"{repr o}"
   | .tanh _ _ => "tanh"
