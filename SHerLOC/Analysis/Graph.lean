@@ -55,7 +55,7 @@ instance : ToString Graph where
 def stripOpCodePrefix (op : String) : String :=
   let head := "StableHLO.Parsing.OpCode."
   if op.startsWith head then
-    op.drop head.length
+    (op.drop head.length).toString
   else
     op
 
