@@ -117,7 +117,7 @@ def done? : PState Bool := do
 def parseItem (keyword : String) : PState Unit := do
   skip
   let st ← get
-  let sub : Substring := { str := st.source, startPos := ⟨ st.index ⟩ , stopPos := ⟨ st.index + keyword.length ⟩ }
+  let sub : Substring.Raw := { str := st.source, startPos := ⟨ st.index ⟩ , stopPos := ⟨ st.index + keyword.length ⟩ }
   if sub.beq keyword.toSubstring then
     set { st with
       index := st.index + keyword.length,
@@ -129,13 +129,13 @@ def parseItem (keyword : String) : PState Unit := do
 def is (keyword : String) : PState Bool := do
   skip
   let st ← get
-  let sub : Substring := { str := st.source, startPos := ⟨ st.index ⟩ , stopPos := ⟨ st.index + keyword.length ⟩ }
+  let sub : Substring.Raw := { str := st.source, startPos := ⟨ st.index ⟩ , stopPos := ⟨ st.index + keyword.length ⟩ }
   return sub.beq keyword.toSubstring
 
 def isParse (keyword : String) : PState Bool := do
   skip
   let st ← get
-  let sub : Substring := { str := st.source, startPos := ⟨ st.index ⟩ , stopPos := ⟨ st.index + keyword.length ⟩ }
+  let sub : Substring.Raw := { str := st.source, startPos := ⟨ st.index ⟩ , stopPos := ⟨ st.index + keyword.length ⟩ }
   if sub.beq keyword.toSubstring then
       set { st with
         index := st.index + keyword.length,
